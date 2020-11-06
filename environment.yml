@@ -1,0 +1,36 @@
+name: artifact
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - tox
+  - statsmodels
+  - pre_commit
+  - dask
+  - pydocstyle
+  - seaborn
+  - click
+  - pytest
+  - sympy
+  - pip
+  - nbstripout
+  - numpy
+  - sphinx
+  - altair
+  - pyscaffold
+  - pycodestyle
+  - pandas
+  - tqdm
+  - optuna
+  - ipykernel
+  - jupyter
+  - xlrd
+  - scipy
+  - matplotlib
+  - nbdime
+  - scikit-learn
+  - recommonmark
+  - jupyterlab
+  - python==3.8
+  - pytest-cov
+prefix: C:\Users\kalingibbons\miniconda3\envs\artifact

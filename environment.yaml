@@ -1,0 +1,37 @@
+name: artifact
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python==3.8
+  - pip
+  - dvc
+  - numpy
+  - matplotlib
+  - pandas
+  - scipy
+  - seaborn
+  - sympy
+  - dask
+  - altair
+  - tqdm
+  - click
+  - optuna
+  - xlrd
+  - scikit-learn
+  - statsmodels
+  - pip:
+    - pyscaffoldext-dsproject
+  # for development only (could also be kept in a separate environment file)
+  - pyscaffold
+  - pycodestyle
+  - pydocstyle
+  - jupyterlab
+  - pytest
+  - pytest-cov
+  - tox
+  - pre_commit
+  - sphinx
+  - nbdime
+  - nbstripout
+  - recommonmark
