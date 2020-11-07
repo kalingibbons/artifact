@@ -1,5 +1,13 @@
 # -*- coding: utf-8 -*-
 from pkg_resources import get_distribution, DistributionNotFound
+from artifact.plotting import (
+    pareto
+)
+from artifact.data import (
+    import_data,
+    split_df,
+    remove_failed
+)
 
 try:
     # Change here if project is renamed and does not equal the package name

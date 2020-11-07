@@ -44,28 +44,26 @@
 # were uniformly drawn across the ranges of potential values.
 
 
-# %%
-from pathlib import Path
-import scipy.io as spio
-import numpy as np
-import pandas as pd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from matplotlib.cm import ScalarMappable
+import numpy as np
+import pandas as pd
 from pathlib import Path
 from scipy import signal
-from sklearn.preprocessing import StandardScaler, RobustScaler
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.decomposition import PCA
+from sklearn.ensemble import (
+    AdaBoostRegressor,
+    GradientBoostingRegressor,
+    RandomForestRegressor
+)
+from sklearn.linear_model import LinearRegression, LogisticRegression, Ridge
+from sklearn.metrics import mean_squared_error
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.neural_network import MLPRegressor
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-from sklearn.linear_model import (LinearRegression, LogisticRegression,
-                                  Ridge)
-from sklearn.ensemble import AdaBoostRegressor
+from sklearn.preprocessing import RobustScaler, StandardScaler
 from sklearn.tree import DecisionTreeRegressor
-from sklearn.metrics import mean_squared_error
 
+import artifact
 
 # %%
 plt.rcParams['figure.figsize'] = (9, 5.5)
@@ -89,52 +87,21 @@ final_run = False
 
 # %%
 # Load the test data
-def import_data(matfilepath):
-    data = spio.loadmat(matfilepath, squeeze_me=True)
-    keys = list(data.keys())
-    data = data[keys[-1]]
-    columns = list(map(lambda x: x.lower(), data.dtype.names))
-    old = ['femie', 'femvv', 'tibslope', 'tibie', 'tibvv', 'xn', 'ctf', 'ctm']
-    new = ['fem_ie', 'fem_vv', 'tib_slope', 'tib_ie', 'tib_vv', 'cop_', 'force_',
-        'torque_']
-    for idx, (o, n) in enumerate(zip(old, new)):
-        columns = list(map(lambda x: x.replace(o, n), columns))
-
-    data_df = pd.DataFrame(data)
-    data_df.columns = columns
-    return data_df
-
-
-def split_df(df, predictor_index):
-    every_index = np.arange(df.shape[1])
-    response_index = np.setdiff1d(every_index, predictor_index)
-    pred_df = df.iloc[:, predictor_index].drop(columns=['cam_rad'])  # constant
-    resp_df = df.iloc[:, response_index]
-    return pred_df.astype(np.float), resp_df
-
-
-def remove_failed(response_series, objs):
-    failed_idx = response_series.apply(lambda x: x.size == 0)
-    new_objs = np.full_like(objs, np.nan)
-    for idx, obj in enumerate(objs):
-        new_objs[idx] = obj[~failed_idx]
-
-    return new_objs
-
-
 # Import the data, split predictors from response
-test_df = import_data('./data/test_reduced.mat')
-train_df = import_data('./data/doe_reduced.mat')
+test_df = artifact.import_data('../data/preprocessed/test_reduced.mat')
+train_df = artifact.import_data('../data/preprocessed/doe_reduced.mat')
 pred_idx = np.arange(0, 14)
-test_feat_df, test_resp_df = split_df(test_df, pred_idx)
-train_feat_df, train_resp_df = split_df(train_df, pred_idx)
+test_feat_df, test_resp_df = artifact.split_df(test_df, pred_idx)
+train_feat_df, train_resp_df = artifact.split_df(train_df, pred_idx)
 
 # Failed simulations will have empty rows. Remove them.
-t = test_resp_df['time']
-test_resp_df, test_feat_df = remove_failed(t, (test_resp_df, test_feat_df))
-t = train_resp_df['time']
-train_resp_df, train_feat_df = remove_failed(t, (train_resp_df, train_feat_df))
-del(t)
+test_resp_df, test_feat_df = artifact.remove_failed(
+    test_resp_df['time'], (test_resp_df, test_feat_df)
+)
+
+train_resp_df, train_feat_df = artifact.remove_failed(
+    train_resp_df['time'], (train_resp_df, train_feat_df)
+)
 
 # Describe the design space
 train_feat_df.hist(figsize=(12, 11))
@@ -175,6 +142,7 @@ def collect_response(response_series):
     return np.vstack(response_series.ravel())
 
 
+# TODO: Break into a function
 feats = train_feat_df.columns
 imps = np.zeros_like(feats, dtype=np.float)
 imps_std = imps.copy()
@@ -219,64 +187,16 @@ plt.show()
 
 
 # %%
-def pareto(heights, cmap=None, names=None):
-    fig = plt.gcf()
-    ax = fig.add_subplot(1, 1, 1)
-    ax.grid(which='major', axis='y')
-    ax.set_axisbelow(True)
-    ysum = np.sum(heights)
-
-    # Create the bar plot
-    bar_ticks = range(len(heights))
-    data_color = [height / max(heights) for height in heights]
-    colormap = plt.cm.get_cmap()
-    colors = colormap(data_color)
-    if cmap is not None:
-        colormap = plt.cm.get_cmap(cmap)
-        colors = colormap(data_color)
-        sm = ScalarMappable(cmap=colormap, norm=plt.Normalize(0, max(data_color)))
-        sm.set_array([])
-        bar = ax.bar(bar_ticks, heights, color=colors, edgecolor='k',
-                     tick_label=names)
-    else:
-        bar = ax.bar(bar_ticks, heights, edgecolor='k', tick_label=names)
-
-    # Format the bar axis
-    ax.set_xticks(bar_ticks)
-    if names is not None:
-        plt.xticks(rotation=45, ha='right')
-    ax.set_ylim((0, ysum))
-    yticks = ax.get_yticks()
-    if max(yticks) < 0.9 * ysum:
-        yticks = np.unique(np.append(yticks, ysum))
-    ax.set_yticks(yticks)
-    ylim = ax.get_ylim()
-
-    # Add an axes for the cumulative sum
-    ax2 = plt.twinx()
-    lin = ax2.plot(bar_ticks, np.cumsum(heights), '.-', color=colormap(0))
-    ax2.set_ylim(ylim)
-    ax2.spines['right'].set_color(colormap(0))
-    ax2.tick_params(axis='y', colors=colormap(0))
-    ax2.title.set_color(colormap(0))
-    fig.canvas.draw()
-    yticks = ax2.get_yticks()
-    yticks = np.round(yticks / ysum * 100).astype(np.int)
-    labels = [str(yt) + '%' for yt in yticks]
-    ax2.set_yticklabels(labels)
-    return (bar, lin), (ax, ax2)
-
-
 X = StandardScaler().fit_transform(train_feat_df.values)
 pca = PCA(n_components=feats.size)
 pca.fit(X)
-_, ax = pareto(pca.explained_variance_, cmap='viridis')
+_, ax = artifact.pareto(pca.explained_variance_, cmap='viridis')
 ax[0].set_ylabel('Variance Explained')
 ax[0].set_xlabel('Principal Component')
 
 
 # %%
-_, ax = pareto(imps[indices], cmap='magma', names=feats[indices])
+_, ax = artifact.pareto(imps[indices], cmap='magma', names=feats[indices])
 ax[0].set_ylabel('Importances')
 
 

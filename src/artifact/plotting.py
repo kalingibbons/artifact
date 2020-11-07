@@ -1,3 +1,8 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.cm import ScalarMappable
+
+
 def pareto(heights, cmap=None, names=None):
     fig = plt.gcf()
     ax = fig.add_subplot(1, 1, 1)
@@ -13,7 +18,8 @@ def pareto(heights, cmap=None, names=None):
     if cmap is not None:
         colormap = plt.cm.get_cmap(cmap)
         colors = colormap(data_color)
-        sm = ScalarMappable(cmap=colormap, norm=plt.Normalize(0, max(data_color)))
+        sm = ScalarMappable(cmap=colormap,
+                            norm=plt.Normalize(0, max(data_color)))
         sm.set_array([])
         bar = ax.bar(bar_ticks, heights, color=colors, edgecolor='k',
                      tick_label=names)
