@@ -32,10 +32,25 @@ In order to set up the necessary environment:
    python setup.py install # or `develop`
    ```
 
+
+4. use [dvc] to download the datasets
+
+   * Point DVC to the correct remote
+
+   ``` none
+   dvc remote add -d name path-or-url-to-data
+   ```
+
+   * Pull the data
+
+   ``` none
+   dvc pull
+   ```
+
     > Note: The folowing is optional and needed only once after `git clone`:
 
 
-4. install several [pre-commit] git hooks with:
+5. install several [pre-commit] git hooks with:
 
    ``` none
    pre-commit install
@@ -45,7 +60,7 @@ In order to set up the necessary environment:
    --no-verify` flag of `git commit` can be used to deactivate pre-commit hooks
    temporarily.
 
-5. install [nbstripout] git hooks to remove the output cells of committed
+6. install [nbstripout] git hooks to remove the output cells of committed
    notebooks with:
 
    ``` none
@@ -123,6 +138,7 @@ This project has been set up using PyScaffold 3.2.3 and the [dsproject
 extension] 0.4. For details and usage information on PyScaffold see
 https://pyscaffold.org/.
 
+[dvc]: https://dvc.org/
 [conda]: https://docs.conda.io/
 [pre-commit]: https://pre-commit.com/
 [Jupyter]: https://jupyter.org/

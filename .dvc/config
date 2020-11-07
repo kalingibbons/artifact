@@ -1,4 +1,4 @@
 [core]
-    remote = datastore
-['remote "datastore"']
+    remote = kg-gdrive
+['remote "kg-gdrive"']
     url = G:/My Drive/dvc/artifact
