@@ -64,6 +64,8 @@ from sklearn.preprocessing import RobustScaler, StandardScaler
 from sklearn.tree import DecisionTreeRegressor
 
 import artifact
+from artifact.datasets import load_tkr
+
 
 # %%
 plt.rcParams['figure.figsize'] = (9, 5.5)
@@ -87,23 +89,7 @@ final_run = False
 
 # %%
 # Load the test data
-# Import the data, split predictors from response
-test_df = artifact.import_data('../data/preprocessed/test_reduced.mat')
-train_df = artifact.import_data('../data/preprocessed/doe_reduced.mat')
-pred_idx = np.arange(0, 14)
-test_feat_df, test_resp_df = artifact.split_df(test_df, pred_idx)
-train_feat_df, train_resp_df = artifact.split_df(train_df, pred_idx)
-
-# Failed simulations will have empty rows. Remove them.
-test_resp_df, test_feat_df = artifact.remove_failed(
-    test_resp_df['time'], (test_resp_df, test_feat_df)
-)
-
-train_resp_df, train_feat_df = artifact.remove_failed(
-    train_resp_df['time'], (train_resp_df, train_feat_df)
-)
-
-# Describe the design space
+train_feat_df, train_resp_df, test_feat_df, test_resp_df = load_tkr()
 train_feat_df.hist(figsize=(12, 11))
 train_feat_df.describe()
 
@@ -286,6 +272,7 @@ n_plots = int(n_rows * n_cols)
 splits = np.arange(0, len(y_test), n_plots)[1:]
 fig, axs = plt.subplots(n_rows, n_cols, figsize=(20, 30))
 combo = zip(np.array_split(y_test, splits), np.array_split(y_pred, splits))
+# FIXME: Need to choose a save path for DVC control
 top_fig_dir = Path('img')
 top_fig_dir.mkdir(exist_ok=True)
 for idx, (y_test_sp, y_pred_sp) in enumerate(combo):

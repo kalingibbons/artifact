@@ -1,3 +1,4 @@
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import scipy.io as spio
@@ -35,3 +36,30 @@ def remove_failed(response_series, df_list):
         new_df_list[idx] = df[~failed_idx]
 
     return new_df_list
+
+
+def load_tkr(use_reduced=True):
+    pred_idx = np.arange(0, 14)
+
+    test_name = 'test_reduced.mat' if use_reduced else 'test.mat'
+    train_name = 'doe_reduced.mat' if use_reduced else 'doe.mat'
+    data_dir = Path.cwd().parent / 'data' / 'preprocessed'
+
+    test_feat, test_resp = split_df(
+        import_data(data_dir / test_name),
+        pred_idx
+    )
+    train_feat, train_resp = split_df(
+        import_data(data_dir / train_name),
+        pred_idx
+    )
+
+    # Failed simulations will have empty rows. Remove them.
+    test_resp, test_feat = remove_failed(
+        test_resp['time'], (test_resp, test_feat)
+    )
+
+    train_resp, train_feat = remove_failed(
+        train_resp['time'], (train_resp, train_feat)
+    )
+    return train_feat, train_resp, test_feat, test_resp

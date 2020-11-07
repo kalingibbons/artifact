@@ -3,7 +3,7 @@ from pkg_resources import get_distribution, DistributionNotFound
 from artifact.plotting import (
     pareto
 )
-from artifact.data import (
+from artifact.datasets import (
     import_data,
     split_df,
     remove_failed
