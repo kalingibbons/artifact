@@ -20,8 +20,11 @@ dependencies:
   - xlrd
   - scikit-learn
   - statsmodels
+  - itkwidgets
+  - itk
   - pip:
     - pyscaffoldext-dsproject
+    - itk-io
   # for development only (could also be kept in a separate environment file)
   - pyscaffold
   - pycodestyle

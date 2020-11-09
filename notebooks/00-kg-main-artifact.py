@@ -44,6 +44,7 @@
 # were uniformly drawn across the ranges of potential values.
 
 
+from joblib.externals.cloudpickle.cloudpickle import cell_set
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -206,7 +207,7 @@ ax[0].set_ylabel('Importances')
 
 # %%
 # Choose the response of interest
-resp_name = 'lat_force_1'
+resp_name = 'lat_force_2'
 
 # Get the data ready
 X_train = train_feat_df.to_numpy()
@@ -267,15 +268,15 @@ sd2 = 2 * y_train.std(axis=0)
 
 err = np.zeros(len(y_pred))
 n_cols = 3
-n_rows = 5
+n_rows = 4
 n_plots = int(n_rows * n_cols)
 splits = np.arange(0, len(y_test), n_plots)[1:]
 fig, axs = plt.subplots(n_rows, n_cols, figsize=(20, 30))
 combo = zip(np.array_split(y_test, splits), np.array_split(y_pred, splits))
-# FIXME: Need to choose a save path for DVC control
-top_fig_dir = Path('img')
+top_fig_dir = Path.cwd().parent / 'models' / 'predictions'
 top_fig_dir.mkdir(exist_ok=True)
 for idx, (y_test_sp, y_pred_sp) in enumerate(combo):
+    list(map(lambda ax: ax.clear(), axs.ravel()))
     for ax, y_t, y_p in zip(axs.ravel(), y_test_sp, y_pred_sp):
         ax.clear()
         ax.fill_between(tim, smooth(avg - sd2), smooth(avg + sd2),
@@ -290,8 +291,118 @@ for idx, (y_test_sp, y_pred_sp) in enumerate(combo):
     resp_str = resp_name.replace('_', '-')
     save_dir = top_fig_dir / resp_str
     save_dir.mkdir(exist_ok=True)
-    save_path = save_dir / '-'.join((save_dir, idx))
+    save_path = save_dir / '-'.join((resp_str, str(idx)))
     fig.savefig(save_path, bbox_inches='tight')
+plt.close(fig)
+
+
+# %%
+class ViewerState:
+    def __init__(self):
+        self.dir_list = list(top_fig_dir.iterdir())
+        self.dir_names = list(map(lambda x: x.name, dir_list))
+        self.im_list = list(dir_list[0].iterdir())
+
+
+vs = ViewerState()
+import ipywidgets as widgets
+from ipywidgets import Layout
+
+
+with open(vs.im_list[0], 'rb') as file:
+    image = file.read()
+
+layout = Layout(
+    display='flex',
+    flex_flow='row',
+    align_items='stretch',
+    justify_content='space-between',
+    width='100%'
+)
+
+viewer = widgets.Image(
+    value=image,
+    format='png',
+)
+
+prv_button = widgets.Button(
+    description='',
+    disabled=False,
+    button_style='',
+    tooltip='Previous image',
+    icon='arrow-left'
+)
+
+output_dropdown = widgets.Dropdown(
+    options=list(zip(vs.dir_names, vs.dir_list)),
+    value=vs.dir_list[0],
+    description='Output: ',
+    disabled=False
+)
+
+
+scrubber = widgets.IntSlider(
+    value=0,
+    min=0,
+    max=5,
+    step=1,
+    description='',
+    disabled=False,
+    continuous_update=False,
+    orientation='horizontal',
+    readout=False,
+    readout_format='d',
+    layout=Layout(flex='1 1 0%', width='auto')
+)
+
+nxt_button = widgets.Button(
+    description='',
+    disabled=False,
+    button_style='',
+    tooltip='Next image',
+    icon='arrow-right',
+)
+
+control_box = widgets.Box(
+    children=(prv_button, scrubber, nxt_button),
+    layout=layout
+)
+
+
+def render_img(idx, im_list):
+    im_path = vs.im_list[idx]
+    with open(str(im_path), 'rb') as file:
+        image = file.read()
+    viewer.value = image
+
+
+def on_nxt_button_clicked(b):
+    scrubber.value += 1
+    # render_img(scrubber.value, im_list)
+
+
+def on_prv_button_clicked(b):
+    scrubber.value -= 1
+    # render_img(scrubber.value, im_list)
+
+
+def on_scrubber_change(change):
+    render_img(change['new'], im_list=vs.im_list)
+
+
+def on_dropdown_change(change):
+    vs.im_list = list(change['new'].iterdir())
+    # scrubber.value = 0
+    render_img(scrubber.value, vs.im_list)
+
+
+prv_button.on_click(on_prv_button_clicked)
+nxt_button.on_click(on_nxt_button_clicked)
+scrubber.observe(on_scrubber_change, names='value')
+output_dropdown.observe(on_dropdown_change, names='value')
+
+
+widgets.VBox([viewer, output_dropdown, control_box])
 
 
 # %%

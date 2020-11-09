@@ -122,10 +122,10 @@ Then take a look into the `scripts` and `notebooks` folders.
 ├── scripts                 <- Analysis and production scripts which import the
 │                              actual PYTHON_PKG, e.g. train_model.
 ├── setup.cfg               <- Declarative configuration of your project.
-├── setup.py                <- Use `python setup.py develop` to install for development or
+├── setup.py                <- Use `python setup.py develop` to install for development
 |                              or create a distribution with `python setup.py bdist_wheel`.
 ├── src
-│   └── dsproject_demo      <- Actual Python package where the main functionality goes.
+│   └── artifact            <- Actual Python package where the main functionality goes.
 ├── tests                   <- Unit tests which can be run with `py.test`.
 ├── .coveragerc             <- Configuration for coverage reports of unit tests.
 ├── .isort.cfg              <- Configuration for git hook that sorts imports.
