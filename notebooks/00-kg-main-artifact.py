@@ -262,10 +262,39 @@ def smooth(array, window=15, poly=3):
 
 
 # Plot the data from the training set, include 95% interval
+def plot_response(x, *ys, ylabel=None, legend_labels=None, ax=plt.gca()):
+    if legend_labels is None:
+        legend_labels = [None] * len(ys)
+    for y, lbl in zip(ys, legend_labels):
+        ax.plot(x, smooth(y), label=lbl)
+
+    ax.set_xlim((x.min(), x.max()))
+    ax.xaxis.set_major_formatter(mpl.ticker.PercentFormatter(xmax=x.max()))
+    ax.set_xlabel(r'% of Deep Knee Bend')
+    ax.set_ylabel(resp_name.replace('_', ' ').title())
+
+
+def plot_bounds(x, y_train, y_pred, ax=plt.gca()):
+    avg = smooth(y_train.mean(axis=0))
+    sd2 = 2 * y_train.std(axis=0)
+    err = np.zeros(len(y_pred))
+    ax.fill_between(
+        x,
+        smooth(avg - sd2),
+        smooth(avg + sd2),
+        color='r',
+        alpha=0.3,
+        label=r'$\pm 2\sigma$'
+    )
+
+
+def create_plots(n_rows, n_cols):
+    pass
+
+
 tim = train_resp_df['time'][0]
 avg = smooth(y_train.mean(axis=0))
 sd2 = 2 * y_train.std(axis=0)
-
 err = np.zeros(len(y_pred))
 n_cols = 3
 n_rows = 4
@@ -277,17 +306,16 @@ top_fig_dir = Path.cwd().parent / 'models' / 'predictions'
 top_fig_dir.mkdir(exist_ok=True)
 pbar = tqdm(total=len(splits))
 for idx, (y_test_sp, y_pred_sp) in enumerate(combo):
-    list(map(lambda ax: ax.clear(), axs.ravel()))
+    [ax.clear() for ax in axs.ravel()]
     for ax, y_t, y_p in zip(axs.ravel(), y_test_sp, y_pred_sp):
         ax.clear()
-        ax.fill_between(tim, smooth(avg - sd2), smooth(avg + sd2),
-                        color='r', alpha=0.3, label=r'$\pm 2\sigma$')
-        ax.plot(tim, smooth(y_t), label='Simulated')
-        ax.plot(tim, smooth(y_p), label='Predicted')
-        ax.set_xlim((tim.min(), tim.max()))
-        ax.xaxis.set_major_formatter(mpl.ticker.PercentFormatter(xmax=tim.max()))
-        ax.set_xlabel('% of Deep Knee Bend')
-        ax.set_ylabel(resp_name.replace('_', ' ').title())
+        plot_bounds(tim, y_train, y_pred, ax=ax)
+        plot_response(tim,
+                      y_t,
+                      y_p,
+                      legend_labels=['Simulated', 'Predicted'],
+                      ylabel=resp_name.replace('_', ' ').title(),
+                      ax=ax)
     ax.legend(loc='best')
     resp_str = resp_name.replace('_', '-')
     save_dir = top_fig_dir / resp_str
@@ -302,4 +330,3 @@ pbar.close()
 # %%
 view = artifact.plotting.ImageViewer(top_fig_dir)
 view.show()
-view.gui
