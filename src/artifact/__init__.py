@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from pkg_resources import get_distribution, DistributionNotFound
+from artifact.core_api import Results
 from artifact.plotting import (
     pareto
 )

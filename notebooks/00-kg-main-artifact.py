@@ -90,15 +90,15 @@ final_run = False
 
 # %%
 # Load the test data
-train_feat_df, train_resp_df, test_feat_df, test_resp_df = load_tkr()
-train_feat_df.hist(figsize=(12, 11))
-train_feat_df.describe()
+tkr = artifact.Results(load_fcn=load_tkr)
+tkr.train_features.hist(figsize=(12, 11))
+tkr.train_features.describe()
 
 
 # %%
 # Describe the test space
-test_feat_df.hist(figsize=(12, 11))
-test_feat_df.describe()
+tkr.test_features.hist(figsize=(12, 11))
+tkr.test_features.describe()
 
 
 # %% [markdown]
@@ -129,32 +129,7 @@ def collect_response(response_series):
     return np.vstack(response_series.ravel())
 
 
-# TODO: Break into a function
-feats = train_feat_df.columns
-imps = np.zeros_like(feats, dtype=np.float)
-imps_std = imps.copy()
-X = StandardScaler().fit_transform(train_feat_df.values)
-for col_name, col in train_resp_df.iteritems():
-    y = collect_response(col)
-    forest = RandomForestRegressor().fit(X, y)
-    imps = imps + forest.feature_importances_
-    imps_std = imps_std + np.std(
-        [tree.feature_importances_ for tree in forest.estimators_], axis=0
-    )
-imps = imps / train_resp_df.shape[1]
-imps_std = imps_std / train_resp_df.shape[1]
-
-indices = np.argsort(imps)[::-1]
-
-
-# %%
-plt.figure()
-plt.title('Feature importances')
-plt.bar(range(X.shape[1]), imps[indices], yerr=imps_std[indices],
-        color='DarkSeaGreen', align='center')
-plt.xticks(range(X.shape[1]), feats[indices], rotation=45, ha='right')
-plt.xlim([-1, X.shape[1]])
-plt.ylabel('Average Importances')
+tkr.plot_feature_importances()
 plt.show()
 
 
@@ -174,7 +149,7 @@ plt.show()
 
 
 # %%
-X = StandardScaler().fit_transform(train_feat_df.values)
+X = StandardScaler().fit_transform(tkr.train_features.values)
 pca = PCA(n_components=feats.size)
 pca.fit(X)
 _, ax = artifact.pareto(pca.explained_variance_, cmap='viridis')
@@ -210,10 +185,10 @@ ax[0].set_ylabel('Importances')
 resp_name = 'lat_force_2'
 
 # Get the data ready
-X_train = train_feat_df.to_numpy()
-X_test = test_feat_df.to_numpy()
-y_train = collect_response(train_resp_df[resp_name])
-y_test = collect_response(test_resp_df[resp_name])
+X_train = tkr.train_features.to_numpy()
+X_test = tkr.test_features.to_numpy()
+y_train = collect_response(tkr.train_response[resp_name])
+y_test = collect_response(tkr.test_response[resp_name])
 
 
 # Scale the data
@@ -288,11 +263,35 @@ def plot_bounds(x, y_train, y_pred, ax=plt.gca()):
     )
 
 
-def create_plots(n_rows, n_cols):
-    pass
+def create_plots(n_rows, n_cols, fig_dir):
+    n_plots = int(n_rows * n_cols)
+    splits = np.arange(0, len(y_test), n_plots)[1:]
+    fig, axs = plt.subplots(n_rows, n_cols, figsize=(20, 30))
+    combo = zip(np.array_split(y_test, splits), np.array_split(y_pred, splits))
+    fig_dir = Path.cwd().parent / 'models' / 'predictions'
+    fig_dir.mkdir(exist_ok=True)
+    pbar = tqdm(total=len(splits), desc='Plotting')
+    lbls = ['Simulated', 'Predicted']
+    ylbl = resp_name.replace('_', ' ').title()
+    for idx, (y_test_sp, y_pred_sp) in enumerate(combo):
+        [ax.clear() for ax in axs.ravel()]
+        for ax, y_t, y_p in zip(axs.ravel(), y_test_sp, y_pred_sp):
+            plot_bounds(tim, y_train, y_pred, ax=ax)
+            plot_response(tim, y_t, y_p, legend_labels=lbls, ylabel=ylbl, ax=ax)
+        ax.legend(loc='best')
+        resp_str = resp_name.replace('_', '-')
+        save_dir = fig_dir / resp_str
+        save_dir.mkdir(exist_ok=True)
+        save_path = save_dir / '-'.join((resp_str, str(idx)))
+        fig.savefig(save_path, bbox_inches='tight')
+        pbar.update(1)
+    plt.close(fig)
 
 
-tim = train_resp_df['time'][0]
+top_fig_dir = Path.cwd().parent / 'models' / 'predictions'
+create_plots(n_rows=3, n_cols=4, fig_dir=top_fig_dir)
+
+tim = tkr.train_response['time'][0]
 avg = smooth(y_train.mean(axis=0))
 sd2 = 2 * y_train.std(axis=0)
 err = np.zeros(len(y_pred))
@@ -305,17 +304,14 @@ combo = zip(np.array_split(y_test, splits), np.array_split(y_pred, splits))
 top_fig_dir = Path.cwd().parent / 'models' / 'predictions'
 top_fig_dir.mkdir(exist_ok=True)
 pbar = tqdm(total=len(splits))
+lbls = ['Simulated', 'Predicted']
+ylbl = resp_name.replace('_', ' ').title()
 for idx, (y_test_sp, y_pred_sp) in enumerate(combo):
     [ax.clear() for ax in axs.ravel()]
     for ax, y_t, y_p in zip(axs.ravel(), y_test_sp, y_pred_sp):
         ax.clear()
         plot_bounds(tim, y_train, y_pred, ax=ax)
-        plot_response(tim,
-                      y_t,
-                      y_p,
-                      legend_labels=['Simulated', 'Predicted'],
-                      ylabel=resp_name.replace('_', ' ').title(),
-                      ax=ax)
+        plot_response(tim, y_t, y_p, legend_labels=lbls, ylabel=ylbl, ax=ax)
     ax.legend(loc='best')
     resp_str = resp_name.replace('_', '-')
     save_dir = top_fig_dir / resp_str
