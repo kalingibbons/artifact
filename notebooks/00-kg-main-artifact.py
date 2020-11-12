@@ -89,18 +89,17 @@ final_run = False
 
 
 # %%
-# Load the test data
+# Load and describe the training data
 tkr_train = artifact.Results(load_fcn=load_tkr, subset='train')
-tkr_test = artifact.Results(load_fcn=load_tkr, subset='test')
-
-tkr_train.features.hist(figsize=(12, 11))
-tkr_train.features.describe()
+# tkr_train.describe_features()
+# plt.show()
 
 
 # %%
-# Describe the test space
-tkr_test.features.hist(figsize=(12, 11))
-tkr_test.features.describe()
+# Load and describe the test space
+tkr_test = artifact.Results(load_fcn=load_tkr, subset='test')
+# tkr_test.describe_features()
+# plt.show()
 
 
 # %% [markdown]
@@ -127,8 +126,8 @@ tkr_test.features.describe()
 
 
 # %%
-tkr_train.plot_feature_importances()
-plt.show()
+# tkr_train.plot_feature_importances()
+# plt.show()
 
 
 # %% [markdown]
@@ -147,17 +146,13 @@ plt.show()
 
 
 # %%
-X = StandardScaler().fit_transform(tkr_train.features.values)
-pca = PCA(n_components=tkr_train.features.columns.size)
-pca.fit(X)
-_, ax = artifact.pareto(pca.explained_variance_, cmap='viridis')
-ax[0].set_ylabel('Variance Explained')
-ax[0].set_xlabel('Principal Component')
+# tkr_train.plot_feature_pca()
+# plt.show()
 
 
 # %%
-# _, ax = artifact.pareto(imps[indices], cmap='magma', names=feats[indices])
-# ax[0].set_ylabel('Importances')
+# tkr_train.plot_feature_importances(use_pareto=True)
+# plt.show()
 
 
 # %% [markdown]
