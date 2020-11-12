@@ -64,7 +64,7 @@ class ImageViewer:
         top_dir = Path(top_dir)
         self.dir_list = list(top_dir.iterdir())
         self.dir_names = [x.name for x in self.dir_list]
-        self.im_list = list(self.dir_list[0].iterdir())
+        self.im_list = list(self.dir_list[0].glob('*.png'))
         with open(self.im_list[0], 'rb') as file:
             self.image = file.read()
 
@@ -146,7 +146,7 @@ class ImageViewer:
         self.render_img()
 
     def on_dropdown_change(self, change):
-        self.im_list = list(change['new'].iterdir())
+        self.im_list = list(change['new'].glob('*.png'))
         self.render_img()
 
     def show(self):

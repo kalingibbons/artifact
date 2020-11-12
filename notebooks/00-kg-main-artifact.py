@@ -90,15 +90,17 @@ final_run = False
 
 # %%
 # Load the test data
-tkr = artifact.Results(load_fcn=load_tkr)
-tkr.train_features.hist(figsize=(12, 11))
-tkr.train_features.describe()
+tkr_train = artifact.Results(load_fcn=load_tkr, subset='train')
+tkr_test = artifact.Results(load_fcn=load_tkr, subset='test')
+
+tkr_train.features.hist(figsize=(12, 11))
+tkr_train.features.describe()
 
 
 # %%
 # Describe the test space
-tkr.test_features.hist(figsize=(12, 11))
-tkr.test_features.describe()
+tkr_test.features.hist(figsize=(12, 11))
+tkr_test.features.describe()
 
 
 # %% [markdown]
@@ -125,11 +127,7 @@ tkr.test_features.describe()
 
 
 # %%
-def collect_response(response_series):
-    return np.vstack(response_series.ravel())
-
-
-tkr.plot_feature_importances()
+tkr_train.plot_feature_importances()
 plt.show()
 
 
@@ -149,8 +147,8 @@ plt.show()
 
 
 # %%
-X = StandardScaler().fit_transform(tkr.train_features.values)
-pca = PCA(n_components=feats.size)
+X = StandardScaler().fit_transform(tkr_train.features.values)
+pca = PCA(n_components=tkr_train.features.columns.size)
 pca.fit(X)
 _, ax = artifact.pareto(pca.explained_variance_, cmap='viridis')
 ax[0].set_ylabel('Variance Explained')
@@ -158,8 +156,8 @@ ax[0].set_xlabel('Principal Component')
 
 
 # %%
-_, ax = artifact.pareto(imps[indices], cmap='magma', names=feats[indices])
-ax[0].set_ylabel('Importances')
+# _, ax = artifact.pareto(imps[indices], cmap='magma', names=feats[indices])
+# ax[0].set_ylabel('Importances')
 
 
 # %% [markdown]
@@ -185,10 +183,10 @@ ax[0].set_ylabel('Importances')
 resp_name = 'lat_force_2'
 
 # Get the data ready
-X_train = tkr.train_features.to_numpy()
-X_test = tkr.test_features.to_numpy()
-y_train = collect_response(tkr.train_response[resp_name])
-y_test = collect_response(tkr.test_response[resp_name])
+X_train = tkr_train.features.to_numpy()
+X_test = tkr_test.features.to_numpy()
+y_train = tkr_train.collect_response(resp_name)
+y_test = tkr_test.collect_response(resp_name)
 
 
 # Scale the data
@@ -263,35 +261,35 @@ def plot_bounds(x, y_train, y_pred, ax=plt.gca()):
     )
 
 
-def create_plots(n_rows, n_cols, fig_dir):
-    n_plots = int(n_rows * n_cols)
-    splits = np.arange(0, len(y_test), n_plots)[1:]
-    fig, axs = plt.subplots(n_rows, n_cols, figsize=(20, 30))
-    combo = zip(np.array_split(y_test, splits), np.array_split(y_pred, splits))
-    fig_dir = Path.cwd().parent / 'models' / 'predictions'
-    fig_dir.mkdir(exist_ok=True)
-    pbar = tqdm(total=len(splits), desc='Plotting')
-    lbls = ['Simulated', 'Predicted']
-    ylbl = resp_name.replace('_', ' ').title()
-    for idx, (y_test_sp, y_pred_sp) in enumerate(combo):
-        [ax.clear() for ax in axs.ravel()]
-        for ax, y_t, y_p in zip(axs.ravel(), y_test_sp, y_pred_sp):
-            plot_bounds(tim, y_train, y_pred, ax=ax)
-            plot_response(tim, y_t, y_p, legend_labels=lbls, ylabel=ylbl, ax=ax)
-        ax.legend(loc='best')
-        resp_str = resp_name.replace('_', '-')
-        save_dir = fig_dir / resp_str
-        save_dir.mkdir(exist_ok=True)
-        save_path = save_dir / '-'.join((resp_str, str(idx)))
-        fig.savefig(save_path, bbox_inches='tight')
-        pbar.update(1)
-    plt.close(fig)
+# def create_plots(n_rows, n_cols, fig_dir):
+#     n_plots = int(n_rows * n_cols)
+#     splits = np.arange(0, len(y_test), n_plots)[1:]
+#     fig, axs = plt.subplots(n_rows, n_cols, figsize=(20, 30))
+#     combo = zip(np.array_split(y_test, splits), np.array_split(y_pred, splits))
+#     fig_dir = Path.cwd().parent / 'models' / 'predictions'
+#     fig_dir.mkdir(exist_ok=True)
+#     pbar = tqdm(total=len(splits), desc='Plotting')
+#     lbls = ['Simulated', 'Predicted']
+#     ylbl = resp_name.replace('_', ' ').title()
+#     for idx, (y_test_sp, y_pred_sp) in enumerate(combo):
+#         [ax.clear() for ax in axs.ravel()]
+#         for ax, y_t, y_p in zip(axs.ravel(), y_test_sp, y_pred_sp):
+#             plot_bounds(tim, y_train, y_pred, ax=ax)
+#             plot_response(tim, y_t, y_p, legend_labels=lbls, ylabel=ylbl, ax=ax)
+#         ax.legend(loc='best')
+#         resp_str = resp_name.replace('_', '-')
+#         save_dir = fig_dir / resp_str
+#         save_dir.mkdir(exist_ok=True)
+#         save_path = save_dir / '-'.join((resp_str, str(idx)))
+#         fig.savefig(save_path, bbox_inches='tight')
+#         pbar.update(1)
+#     plt.close(fig)
 
 
 top_fig_dir = Path.cwd().parent / 'models' / 'predictions'
-create_plots(n_rows=3, n_cols=4, fig_dir=top_fig_dir)
+# create_plots(n_rows=3, n_cols=4, fig_dir=top_fig_dir)
 
-tim = tkr.train_response['time'][0]
+tim = tkr_train.response['time'][0]
 avg = smooth(y_train.mean(axis=0))
 sd2 = 2 * y_train.std(axis=0)
 err = np.zeros(len(y_pred))

@@ -38,7 +38,7 @@ def remove_failed(response_series, df_list):
     return new_df_list
 
 
-def load_tkr(use_reduced=True):
+def load_tkr(use_reduced=True, subset=None):
     pred_idx = np.arange(0, 14)
 
     test_name = 'test_reduced.mat' if use_reduced else 'test.mat'
@@ -62,4 +62,9 @@ def load_tkr(use_reduced=True):
     train_resp, train_feat = remove_failed(
         train_resp['time'], (train_resp, train_feat)
     )
-    return train_feat, train_resp, test_feat, test_resp
+    if subset is None:
+        return (train_feat, train_resp), (test_feat, test_resp)
+    if subset.lower() == 'train':
+        return train_feat, train_resp
+    if subset.lower() == 'test':
+        return test_feat, test_resp
