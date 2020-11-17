@@ -129,6 +129,7 @@ def pareto(heights, cmap=None, names=None):
     ax2.spines['right'].set_color(colormap(0))
     ax2.tick_params(axis='y', colors=colormap(0))
     ax2.title.set_color(colormap(0))
+    ax2.grid(False)
     fig.canvas.draw()
     yticks = ax2.get_yticks()
     yticks = np.round(yticks / ysum * 100).astype(np.int)

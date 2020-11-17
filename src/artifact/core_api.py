@@ -94,7 +94,7 @@ class Results:
         if not use_pareto:
             fig = plt.gcf()
             ax = fig.add_subplot(1, 1, 1)
-            ax.set_title('Feature importances')
+            # ax.set_title('Feature importances')
             ax.bar(range(X.shape[1]), imps[indices], yerr=imps_std[indices],
                    color='DarkSeaGreen', align='center')
             ax.set_xticks(range(X.shape[1]))
@@ -102,6 +102,8 @@ class Results:
                                rotation=45,
                                ha='right')
             ax.set_xlim([-1, X.shape[1]])
+            ylim = ax.get_ylim()
+            ax.set_ylim([0, ylim[1]])
             ax.set_ylabel('Average Importances')
         else:  # use_pareto
             feats = self.features.columns
