@@ -1,14 +1,89 @@
 # %%
 from pathlib import Path
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.cm import ScalarMappable
 import ipywidgets as widgets
 from ipywidgets import Layout
 from IPython.display import display
+from tqdm.auto import tqdm
+from scipy import signal
 
 
 # %%
+def smooth(array, window=15, poly=3):
+    return signal.savgol_filter(array, window, poly)
+
+
+def plot_response(x, *ys, ylabel=None, legend_labels=None, ax=plt.gca()):
+    if legend_labels is None:
+        legend_labels = [None] * len(ys)
+    for y, lbl in zip(ys, legend_labels):
+        ax.plot(x, smooth(y), label=lbl)
+
+    ax.set_xlim((x.min(), x.max()))
+    ax.xaxis.set_major_formatter(mpl.ticker.PercentFormatter(xmax=x.max()))
+    ax.set_xlabel(r'% of Deep Knee Bend')
+    ax.set_ylabel(ylabel)
+
+
+def plot_bounds(x, y_train, ax=plt.gca()):
+    avg = smooth(y_train.mean(axis=0))
+    sd2 = 2 * y_train.std(axis=0)
+    # err = np.zeros(len(y_pred))
+    ax.fill_between(
+        x,
+        smooth(avg - sd2),
+        smooth(avg + sd2),
+        color='r',
+        alpha=0.3,
+        label=r'$\pm 2\sigma$'
+    )
+
+
+def create_plots(n_rows,
+                 n_cols,
+                 regressor,
+                 resp_name,
+                 fig_dir,
+                 force_clobber=False):
+    fig_dir.mkdir(exist_ok=True)
+    resp_str = resp_name.replace('_', '-')
+    save_dir = fig_dir / resp_str
+    save_dir.mkdir(exist_ok=True)
+
+    tim = regressor.train_results.collect_response('time')[0]
+    y_train = regressor.train_results.collect_response(resp_name)
+    y_test = regressor.test_results.collect_response(resp_name)
+    y_pred = regressor.fit(resp_name).predict()
+
+    n_plots = int(n_rows * n_cols)
+    n_img = np.ceil(len(y_pred) / n_plots)
+    existing_plots = list(save_dir.glob('*.png'))
+    if force_clobber or (n_img < len(existing_plots)):
+        [p.unlink() for p in existing_plots]
+    splits = np.arange(0, len(y_test), n_plots)[1:]
+    fig, axs = plt.subplots(n_rows, n_cols, figsize=(20, 30))
+    combo = zip(np.array_split(y_test, splits), np.array_split(y_pred, splits))
+    pbar = tqdm(total=len(splits), desc=f'Plotting {resp_name}')
+    lbls = ['Simulated', 'Predicted']
+    ylbl = resp_name.replace('_', ' ').title()
+    for idx, (y_test_sp, y_pred_sp) in enumerate(combo):
+        for ax, y_t, y_p in zip(axs.ravel(), y_test_sp, y_pred_sp):
+            plot_bounds(tim, y_train, ax=ax)
+            plot_response(tim, y_t, y_p, legend_labels=lbls, ylabel=ylbl, ax=ax)
+
+        ax.legend(loc='best')
+        save_path = save_dir / '-'.join((resp_str, str(idx)))
+        fig.savefig(save_path, bbox_inches='tight')
+        pbar.update(1)
+        [ax.clear() for ax in axs.ravel()]
+
+    pbar.close()
+    plt.close(fig)
+
+
 def pareto(heights, cmap=None, names=None):
     fig = plt.gcf()
     ax = fig.add_subplot(1, 1, 1)

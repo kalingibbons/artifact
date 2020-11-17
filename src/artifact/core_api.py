@@ -8,9 +8,38 @@ from IPython.display import display
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error
 from sklearn.decomposition import PCA
+from sklearn.multioutput import MultiOutputRegressor
 
 from artifact.plotting import pareto
+
+
+class Response:
+    def __init__(self, name):
+        self.name = name
+        self.accuracies = dict()
+
+    def add_accuracy(self, learner, accuracy):
+        self.accuracies[learner] = accuracy
+
+    def rm_accuracy(self, learner, accuracy):
+        if learner in self.accuracies:
+            self.accuracies.pop(learner)
+
+    @property
+    def best_accuracy(self):
+        sr = pd.Series(self.accuracies)
+        return sr.sort_values().iloc[-1].to_dict().copy()
+
+    def summary(self):
+        return pd.DataFrame(self.accuracies)
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return f'Response({self.name})'
 
 
 class Results:
@@ -20,9 +49,13 @@ class Results:
         self._importances_indices = None
         if load_fcn is not None:
             self.features, self.response = load_fcn(*load_args, **load_kwargs)
+            self.feature_names = list(self.features.columns)
+            self.response_names = list(self.response.columns)
         else:
             self.features = None
-            self.responses = None
+            self.response = None
+            self.feature_names = None
+            self.response_names = None
 
     def describe_features(self):
         display(self.features.describe())
@@ -87,3 +120,44 @@ class Results:
 
     def collect_response(self, response_name):
         return np.vstack(self.response[response_name].ravel())
+
+
+class Regressor:
+    def __init__(self,
+                 train_results,
+                 test_results,
+                 learner,
+                 scaler=None):
+        self.train_results = train_results
+        self.test_results = test_results
+        self.learner = MultiOutputRegressor(learner)
+        self.scaler = scaler
+        self.x_train = self.train_results.features.to_numpy()
+        self.x_test = self.test_results.features.to_numpy()
+        # self.response_dict = dict()
+
+        if self.scaler is not None:
+            self.scaler.fit(self.x_train)
+            self.x_train = self.scaler.transform(self.x_train)
+            self.x_test = self.scaler.transform(self.x_test)
+
+    def fit(self, response_name):
+        y_train = self.train_results.collect_response(response_name)
+        self.test_values = self.test_results.collect_response(response_name)
+        self.learner.fit(self.x_train, y_train)
+        self.current_response_name = response_name
+        return self
+
+    def predict(self):
+        self.test_predictions = self.learner.predict(self.x_test)
+        err = mean_squared_error(
+            self.test_values,
+            self.test_predictions
+        )
+        self.prediction_error = err
+        # name = self.current_response_name
+        # lrn_str = self.learner.__str__()
+        # if name not in self.response_dict:
+        #     self.response_dict[name] = Response(name)
+        # self.response_dict[name].add_accuracy(lrn_str, err)
+        return self.test_predictions

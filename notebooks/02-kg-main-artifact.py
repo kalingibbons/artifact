@@ -49,7 +49,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from scipy import signal
+from IPython.display import display
+
 from sklearn.decomposition import PCA
 from sklearn.ensemble import (
     AdaBoostRegressor,
@@ -62,7 +63,7 @@ from sklearn.multioutput import MultiOutputRegressor
 from sklearn.neural_network import MLPRegressor
 from sklearn.preprocessing import RobustScaler, StandardScaler
 from sklearn.tree import DecisionTreeRegressor
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 import artifact
 from artifact.datasets import load_tkr
@@ -90,14 +91,18 @@ final_run = False
 
 # %%
 # Load and describe the training data
-tkr_train = artifact.Results(load_fcn=load_tkr, subset='train')
+tkr_train = artifact.Results(load_fcn=load_tkr,
+                             use_reduced=True,
+                             subset='train')
 # tkr_train.describe_features()
 # plt.show()
 
 
 # %%
 # Load and describe the test space
-tkr_test = artifact.Results(load_fcn=load_tkr, subset='test')
+tkr_test = artifact.Results(load_fcn=load_tkr,
+                            use_reduced=True,
+                            subset='test')
 # tkr_test.describe_features()
 # plt.show()
 
@@ -175,24 +180,7 @@ tkr_test = artifact.Results(load_fcn=load_tkr, subset='test')
 
 # %%
 # Choose the response of interest
-resp_name = 'lat_force_2'
 
-# Get the data ready
-X_train = tkr_train.features.to_numpy()
-X_test = tkr_test.features.to_numpy()
-y_train = tkr_train.collect_response(resp_name)
-y_test = tkr_test.collect_response(resp_name)
-
-
-# Scale the data
-scaler = StandardScaler
-transformer = scaler().fit(X_train)
-X_train_scaled = transformer.transform(X_train)
-X_test_scaled = transformer.transform(X_test)
-
-# Select a model to investigate
-names = ('grad_boost', 'rand_forest', 'adaboost_tree', 'adaboost_linear',
-         'decision_tree', 'linear')
 learners = (
     GradientBoostingRegressor(n_estimators=100),
     RandomForestRegressor(n_estimators=100),
@@ -201,15 +189,24 @@ learners = (
     DecisionTreeRegressor(),
     LinearRegression()
 )
-# errs = np.zeros_like(names, dtype=np.float)
-# for idx, learner in enumerate(learners):
-#     regr = MultiOutputRegressor(learner)
-#     regr.fit(X_train_scaled, y_train)
-#     y_pred = regr.predict(X_test_scaled)
-#     errs[idx] = mean_squared_error(y_test, y_pred)
+names = [x.__str__().replace('()', '') for x in learners]
+scaler = StandardScaler()
+regr = artifact.Regressor(tkr_train, tkr_test, learners[0], scaler=scaler)
+err_df = pd.DataFrame(index=names)
+# for name in regr.train_results.response_names:
+#     if name == 'time':
+#         continue
+#     errs = np.zeros_like(names, dtype=np.float)
+#     for idx, lrn in enumerate(learners):
+#         regr.learner = MultiOutputRegressor(lrn)
+#         y_pred = regr.fit(name).predict()
+#         errs[idx] = regr.prediction_error
+#     err_df[name] = errs
 
-# results = pd.Series(errs, index=names)
-# results
+# best_learners = err_df.idxmin()
+
+# print('Best learner counts:')
+# display(best_learners.value_counts(), best_learners.sort_values())
 
 
 # %% [markdown]
@@ -219,101 +216,15 @@ learners = (
 
 
 # %%
-learner = LinearRegression()
-regr = MultiOutputRegressor(learner)
-regr.fit(X_train_scaled, y_train)
-y_pred = regr.predict(X_test_scaled)
 
-
-def smooth(array, window=15, poly=3):
-    return signal.savgol_filter(array, window, poly)
-
-
-# Plot the data from the training set, include 95% interval
-def plot_response(x, *ys, ylabel=None, legend_labels=None, ax=plt.gca()):
-    if legend_labels is None:
-        legend_labels = [None] * len(ys)
-    for y, lbl in zip(ys, legend_labels):
-        ax.plot(x, smooth(y), label=lbl)
-
-    ax.set_xlim((x.min(), x.max()))
-    ax.xaxis.set_major_formatter(mpl.ticker.PercentFormatter(xmax=x.max()))
-    ax.set_xlabel(r'% of Deep Knee Bend')
-    ax.set_ylabel(resp_name.replace('_', ' ').title())
-
-
-def plot_bounds(x, y_train, y_pred, ax=plt.gca()):
-    avg = smooth(y_train.mean(axis=0))
-    sd2 = 2 * y_train.std(axis=0)
-    err = np.zeros(len(y_pred))
-    ax.fill_between(
-        x,
-        smooth(avg - sd2),
-        smooth(avg + sd2),
-        color='r',
-        alpha=0.3,
-        label=r'$\pm 2\sigma$'
-    )
-
-
-# def create_plots(n_rows, n_cols, fig_dir):
-#     n_plots = int(n_rows * n_cols)
-#     splits = np.arange(0, len(y_test), n_plots)[1:]
-#     fig, axs = plt.subplots(n_rows, n_cols, figsize=(20, 30))
-#     combo = zip(np.array_split(y_test, splits), np.array_split(y_pred, splits))
-#     fig_dir = Path.cwd().parent / 'models' / 'predictions'
-#     fig_dir.mkdir(exist_ok=True)
-#     pbar = tqdm(total=len(splits), desc='Plotting')
-#     lbls = ['Simulated', 'Predicted']
-#     ylbl = resp_name.replace('_', ' ').title()
-#     for idx, (y_test_sp, y_pred_sp) in enumerate(combo):
-#         [ax.clear() for ax in axs.ravel()]
-#         for ax, y_t, y_p in zip(axs.ravel(), y_test_sp, y_pred_sp):
-#             plot_bounds(tim, y_train, y_pred, ax=ax)
-#             plot_response(tim, y_t, y_p, legend_labels=lbls, ylabel=ylbl, ax=ax)
-#         ax.legend(loc='best')
-#         resp_str = resp_name.replace('_', '-')
-#         save_dir = fig_dir / resp_str
-#         save_dir.mkdir(exist_ok=True)
-#         save_path = save_dir / '-'.join((resp_str, str(idx)))
-#         fig.savefig(save_path, bbox_inches='tight')
-#         pbar.update(1)
-#     plt.close(fig)
-
-
+regr.learner = MultiOutputRegressor(LinearRegression())
 top_fig_dir = Path.cwd().parent / 'models' / 'predictions'
-# create_plots(n_rows=3, n_cols=4, fig_dir=top_fig_dir)
-
+n_rows, n_cols = 4, 3
 tim = tkr_train.response['time'][0]
-avg = smooth(y_train.mean(axis=0))
-sd2 = 2 * y_train.std(axis=0)
-err = np.zeros(len(y_pred))
-n_cols = 3
-n_rows = 4
-n_plots = int(n_rows * n_cols)
-splits = np.arange(0, len(y_test), n_plots)[1:]
-fig, axs = plt.subplots(n_rows, n_cols, figsize=(20, 30))
-combo = zip(np.array_split(y_test, splits), np.array_split(y_pred, splits))
-top_fig_dir = Path.cwd().parent / 'models' / 'predictions'
-top_fig_dir.mkdir(exist_ok=True)
-pbar = tqdm(total=len(splits))
-lbls = ['Simulated', 'Predicted']
-ylbl = resp_name.replace('_', ' ').title()
-for idx, (y_test_sp, y_pred_sp) in enumerate(combo):
-    [ax.clear() for ax in axs.ravel()]
-    for ax, y_t, y_p in zip(axs.ravel(), y_test_sp, y_pred_sp):
-        ax.clear()
-        plot_bounds(tim, y_train, y_pred, ax=ax)
-        plot_response(tim, y_t, y_p, legend_labels=lbls, ylabel=ylbl, ax=ax)
-    ax.legend(loc='best')
-    resp_str = resp_name.replace('_', '-')
-    save_dir = top_fig_dir / resp_str
-    save_dir.mkdir(exist_ok=True)
-    save_path = save_dir / '-'.join((resp_str, str(idx)))
-    fig.savefig(save_path, bbox_inches='tight')
-    pbar.update(1)
-plt.close(fig)
-pbar.close()
+for resp_name in tkr_train.response_names:
+    if resp_name == 'time':
+        continue
+    artifact.create_plots(n_rows, n_cols, regr, resp_name, top_fig_dir)
 
 
 # %%

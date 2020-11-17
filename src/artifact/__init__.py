@@ -1,9 +1,18 @@
 # -*- coding: utf-8 -*-
 from pkg_resources import get_distribution, DistributionNotFound
-from artifact.core_api import Results
-from artifact.plotting import (
-    pareto
+from artifact.core_api import (
+    Results,
+    Regressor
 )
+
+from artifact.plotting import (
+    pareto,
+    smooth,
+    plot_response,
+    plot_bounds,
+    create_plots
+)
+
 from artifact.datasets import (
     import_data,
     split_df,
