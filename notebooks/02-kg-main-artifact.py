@@ -92,7 +92,6 @@ final_run = False
 # %%
 # Load and describe the training data
 tkr_train = artifact.Results(load_fcn=load_tkr,
-                             use_reduced=True,
                              subset='train')
 # tkr_train.describe_features()
 # plt.show()
@@ -101,7 +100,6 @@ tkr_train = artifact.Results(load_fcn=load_tkr,
 # %%
 # Load and describe the test space
 tkr_test = artifact.Results(load_fcn=load_tkr,
-                            use_reduced=True,
                             subset='test')
 # tkr_test.describe_features()
 # plt.show()
