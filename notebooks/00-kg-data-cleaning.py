@@ -28,6 +28,7 @@ import sys
 import math
 import logging
 from pathlib import Path
+from IPython.display import display
 
 import numpy as np
 import scipy as sp
@@ -195,10 +196,23 @@ cleaned_train_path = cleaned_dir / 'train.parquet'
 # %%
 # Test
 dirty_test = import_matlab_data(dirty_test_path)
+dirty_test.shape
+
+# %%
+dirty_test.head()
+
+# %%
 dirty_test, dropped_cols = drop_columns(dirty_test, drop_regex)
 print('Dropped', dropped_cols)
-clean_test = remove_failed(dirty_test.iloc[:, -1], [dirty_test])
 
+# %%
+clean_test = remove_failed(dirty_test.iloc[:, -1], [dirty_test])
+clean_test.shape
+
+# %%
+clean_test.head()
+
+# %%
 # Train
 dirty_train = import_matlab_data(dirty_test_path)
 dirty_train, _ = drop_columns(dirty_train, drop_regex)
