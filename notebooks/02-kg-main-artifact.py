@@ -215,14 +215,14 @@ err_df = pd.DataFrame(index=names)
 
 # %%
 
-regr.learner = MultiOutputRegressor(LinearRegression())
+# regr.learner = MultiOutputRegressor(LinearRegression())
 top_fig_dir = Path.cwd().parent / 'models' / 'predictions'
-n_rows, n_cols = 4, 3
-tim = tkr_train.response['time'][0]
-for resp_name in tkr_train.response_names:
-    if resp_name == 'time':
-        continue
-    artifact.create_plots(n_rows, n_cols, regr, resp_name, top_fig_dir)
+# n_rows, n_cols = 4, 3
+# tim = tkr_train.response['time'][0]
+# for resp_name in tkr_train.response_names:
+#     if resp_name == 'time':
+#         continue
+#     artifact.create_plots(n_rows, n_cols, regr, resp_name, top_fig_dir)
 
 
 # %%

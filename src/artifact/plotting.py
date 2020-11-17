@@ -16,7 +16,9 @@ def smooth(array, window=15, poly=3):
     return signal.savgol_filter(array, window, poly)
 
 
-def plot_response(x, *ys, ylabel=None, legend_labels=None, ax=plt.gca()):
+def plot_response(x, *ys, ylabel=None, legend_labels=None, ax=None):
+    if ax is None:
+        ax = plt.gca()
     if legend_labels is None:
         legend_labels = [None] * len(ys)
     for y, lbl in zip(ys, legend_labels):
@@ -28,7 +30,9 @@ def plot_response(x, *ys, ylabel=None, legend_labels=None, ax=plt.gca()):
     ax.set_ylabel(ylabel)
 
 
-def plot_bounds(x, y_train, ax=plt.gca()):
+def plot_bounds(x, y_train, ax=None):
+    if ax is None:
+        ax = plt.gca()
     avg = smooth(y_train.mean(axis=0))
     sd2 = 2 * y_train.std(axis=0)
     # err = np.zeros(len(y_pred))
