@@ -74,9 +74,11 @@ def create_plots(n_rows,
     lbls = ['Simulated', 'Predicted']
     ylbl = resp_name.replace('_', ' ').title()
     for idx, (y_test_sp, y_pred_sp) in enumerate(combo):
-        for ax, y_t, y_p in zip(axs.ravel(), y_test_sp, y_pred_sp):
+        ax_pbar = tqdm(axs.ravel())
+        for ax, y_t, y_p in zip(ax_pbar, y_test_sp, y_pred_sp):
             plot_bounds(tim, y_train, ax=ax)
             plot_response(tim, y_t, y_p, legend_labels=lbls, ylabel=ylbl, ax=ax)
+        ax_pbar.close()
 
         ax.legend(loc='best')
         save_path = save_dir / '-'.join((resp_str, str(idx)))
