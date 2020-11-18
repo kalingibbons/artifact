@@ -4,13 +4,25 @@ import sys
 import math
 import logging
 from pathlib import Path
+from joblib.externals.cloudpickle.cloudpickle import cell_set
 
 import numpy as np
 import scipy as sp
 import scipy.io as spio
-import sklearn
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
+
+import sklearn
+from sklearn.ensemble import (
+    AdaBoostRegressor,
+    GradientBoostingRegressor,
+    RandomForestRegressor
+)
+from sklearn.linear_model import LinearRegression, LogisticRegression, Ridge
+from sklearn.preprocessing import StandardScaler
+from sklearn.tree import DecisionTreeRegressor
+from tqdm.auto import tqdm
+
 
 # !%load_ext autoreload
 # !%autoreload 2
@@ -24,6 +36,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 import artifact
+from artifact.datasets import load_tkr, func_group_lut
 
 
 # %%
@@ -43,12 +56,16 @@ pd.set_option("display.max_columns", 120)
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
 # %% [markdown]
-# **PLEASE** save this file right now using the following naming convention:
-# `NUMBER_FOR_SORTING-YOUR_INITIALS-SHORT_DESCRIPTION`, e.g.
-# `1.0-fw-initial-data-exploration`. Use the number to order the file within
-# the directory according to its usage.
 
 # %%
+func_groups = func_group_lut.keys()
+func_groups
 
+# %%
+# tkr_train = artifact.Results(load_fcn=load_tkr, subset='test')
+# tkr_test = artifact.Results(load_fcn=load_tkr, subset='train')
 
-
+test_feat, test_resp = artifact.datasets.load_tkr(
+    subset='test',
+    functional_group='patella'
+)

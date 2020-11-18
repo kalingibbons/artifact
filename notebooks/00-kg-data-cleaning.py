@@ -49,6 +49,7 @@ import seaborn as sns
 import pandas as pd
 
 import artifact
+from artifact.core_api import select_by_regex
 
 
 # %%
@@ -128,20 +129,8 @@ def import_matlab_data(matfilepath):
 
 
 def drop_columns(data_df, regex_list):
-    """Remove DataFrame columns using regex column label matching.
-
-    Args:
-        data_df (pandas.DataFrame): The dataframe with column labels.
-        regex_list ([str]): A list of regular expressions used for pattern
-            matching the column labels of data_df.
-
-    Returns:
-        pandas.DataFrame: A copy of data_df with the matched columns removed.
-    """
-    cols = data_df.columns
-    needs_drop = np.any([cols.str.contains(x) for x in regex_list], axis=0)
-    dropped_cols = cols[needs_drop]
-    return data_df.drop(dropped_cols, axis='columns'), dropped_cols.values
+    """Remove columns using regular expressions."""
+    return artifact.select_by_regex(data_df, regex_list, axis=1, negate=True)
 
 
 def remove_failed(response_series, df_list):

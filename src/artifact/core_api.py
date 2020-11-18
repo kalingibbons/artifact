@@ -3,6 +3,7 @@ from pathlib import Path
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy.lib.function_base import select
 import pandas as pd
 from IPython.display import display
 
@@ -15,31 +16,31 @@ from sklearn.multioutput import MultiOutputRegressor
 from artifact.plotting import pareto
 
 
-class Response:
-    def __init__(self, name):
-        self.name = name
-        self.accuracies = dict()
+def select_by_regex(data_df, regex_list, axis=0, negate=False):
+    """Index a dataframe using regex label matching.
 
-    def add_accuracy(self, learner, accuracy):
-        self.accuracies[learner] = accuracy
+    Args:
+        data_df (pandas.DataFrame): the dataframe to be indexed.
+        regex_list ([str]): A list of regular expressions used for pattern
+        matching the index or columns of data_df.
+        axis (int, optional): The axis to match against. Defaults to 0.
+        negate (bool, optional): Flag to select the inverse of the regex
+            match. Defaults to False.
 
-    def rm_accuracy(self, learner, accuracy):
-        if learner in self.accuracies:
-            self.accuracies.pop(learner)
+    Returns:
+        pandas.DataFrame: A copy of data_df containing only the matched index
+            or columns (or with the negated match removed)
+    """
+    if axis == 0:
+        labels = data_df.index
+    elif axis == 1:
+        labels = data_df.columns
+    has_match = np.any([labels.str.contains(x) for x in regex_list], axis=0)
+    if negate:
+        has_match = ~has_match
 
-    @property
-    def best_accuracy(self):
-        sr = pd.Series(self.accuracies)
-        return sr.sort_values().iloc[-1].to_dict().copy()
-
-    def summary(self):
-        return pd.DataFrame(self.accuracies)
-
-    def __str__(self):
-        return self.name
-
-    def __repr__(self):
-        return f'Response({self.name})'
+    selected_labels = labels[~has_match]
+    return data_df.drop(selected_labels, axis=axis), selected_labels
 
 
 class Results:
@@ -157,9 +158,4 @@ class Regressor:
             self.test_predictions
         )
         self.prediction_error = err
-        # name = self.current_response_name
-        # lrn_str = self.learner.__str__()
-        # if name not in self.response_dict:
-        #     self.response_dict[name] = Response(name)
-        # self.response_dict[name].add_accuracy(lrn_str, err)
         return self.test_predictions
