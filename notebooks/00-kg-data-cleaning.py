@@ -203,7 +203,7 @@ clean_test.head()
 
 # %%
 # Train
-dirty_train = import_matlab_data(dirty_test_path)
+dirty_train = import_matlab_data(dirty_train_path)
 dirty_train, _ = drop_columns(dirty_train, drop_regex)
 clean_train = remove_failed(dirty_train.iloc[:, -1], [dirty_train])
 

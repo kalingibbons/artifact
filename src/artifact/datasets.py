@@ -32,7 +32,6 @@ def load_tkr(functional_group=None, subset=None):
     pred_idx = np.arange(0, 14)
 
     data_dir = Path.cwd().parent / 'data' / 'preprocessed'
-    resp_dfs = []
 
     def select_group(df, functional_group):
         if functional_group in tkr_group_lut.keys():
@@ -42,17 +41,15 @@ def load_tkr(functional_group=None, subset=None):
             df, _ = select_by_regex(df, patterns, axis=1)
             return df
 
-    if (subset is not None) or (subset.lower() == 'train'):
+    if (subset is None) or (subset.lower() == 'test'):
         test_data = pd.read_parquet(data_dir / 'test.parquet')
         test_data = select_group(test_data, functional_group)
         test_feat, test_resp = split_df(test_data, pred_idx)
-        resp_dfs.append(test_resp)
 
-    if (subset is not None) or (subset.lower() == 'test'):
+    if (subset is None) or (subset.lower() == 'train'):
         train_data = pd.read_parquet(data_dir / 'train.parquet')
         train_data = select_group(train_data, functional_group)
         train_feat, train_resp = split_df(train_data, pred_idx)
-        resp_dfs.append(train_resp)
 
     if subset is None:
         return (train_feat, train_resp), (test_feat, test_resp)

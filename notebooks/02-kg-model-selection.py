@@ -87,8 +87,8 @@ func_groups = list(tkr_group_lut.keys())
 func_groups
 
 # %%
-group = 'ligaments'
-force_search = False
+group = 'contact_mechanics'
+force_search = True
 
 shared_kwargs = dict(load_fcn=load_tkr, functional_group=group)
 tkr_train = artifact.Results(**shared_kwargs, subset='train')
@@ -109,25 +109,27 @@ learners = (
     DecisionTreeRegressor(),
     LinearRegression()
 )
+names = [x.__str__().replace('()', '') for x in learners]
+scaler = StandardScaler()
+regr = artifact.Regressor(tkr_train, tkr_test, learners[0], scaler=scaler)
+err_df = pd.DataFrame(index=names)
 
 saved_keys = reg_prof.error_dataframes.keys()
-if (not force_search) and (group not in saved_keys):
-    names = [x.__str__().replace('()', '') for x in learners]
-    scaler = StandardScaler()
-    regr = artifact.Regressor(tkr_train, tkr_test, learners[0], scaler=scaler)
-    err_df = pd.DataFrame(index=names)
-    for name in regr.train_results.response_names:
-        if name == 'time':
-            continue
-        errs = np.zeros_like(names, dtype=np.float)
-        for idx, lrn in enumerate(learners):
-            regr.learner = MultiOutputRegressor(lrn)
-            y_pred = regr.fit(name).predict()
-            errs[idx] = regr.prediction_error
-        err_df[name] = errs
 
-    reg_prof.add_results(group, err_df)
-    reg_prof.save(regr_profile_path)
+for group in func_groups:
+    if (force_search) or (group not in saved_keys):
+        for name in regr.train_results.response_names:
+            if name == 'time':
+                continue
+            errs = np.zeros_like(names, dtype=np.float)
+            for idx, lrn in enumerate(learners):
+                regr.learner = MultiOutputRegressor(lrn)
+                y_pred = regr.fit(name).predict()
+                errs[idx] = regr.prediction_error
+            err_df[name] = errs
+
+        reg_prof.add_results(group, err_df)
+        reg_prof.save(regr_profile_path)
 
 # %%
 err_df = reg_prof.error_dataframes[group]
@@ -142,7 +144,3 @@ best_learners.value_counts()
 
 # %%
 best_learners.sort_values()
-
-
-# %%
-err_df.drop('DecisionTreeRegressor').idxmin().sort_values()
