@@ -16,6 +16,7 @@ import logging
 from pathlib import Path
 from IPython.display import display
 
+from colorama import Fore, Style
 import numpy as np
 import scipy as sp
 import scipy.io as spio
@@ -105,12 +106,17 @@ class RegressionProfile:
             print(f'No error summary with key {name} was found.')
             return
         best_learners = df.idxmin()
+        print(1 * '\n')
+        print(Fore.YELLOW + name + '\n' + len(name) * '-')
+        # print(len(name) * '-')
+        print(Style.RESET_ALL)
         print('Best learners total by response:')
         display(best_learners.value_counts(), best_learners.sort_values())
         print('\n\nSorted by median RMS error (smallest to largest):')
         display(df.T.describe().T.sort_values(by=['50%']))
         print('\n\nRMS Errors:')
         display(df)
+        print(2 * '\n')
 
 
 # %% [markdown]
@@ -171,7 +177,7 @@ reg_prof = RegressionProfile(load_path=regr_profile_path)
 # previous profiling session.
 
 # %%
-force_search = True
+force_search = False
 
 # %%
 learner_names = [x.__str__().replace('()', '') for x in learners]
@@ -205,9 +211,6 @@ if (force_search) or (group not in saved_keys):
 # ## Results
 
 # %%
+# reg_prof.summarize(group)
 for key in reg_prof.error_dataframes.keys():
-    print(f'\n\n\n\n{key}')
     reg_prof.summarize(key)
-
-# %%
-reg_prof.summarize(group)
