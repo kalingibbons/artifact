@@ -69,7 +69,7 @@ func_groups = list(tkr_group_lut.keys())
 func_groups
 
 # %%
-group = 'joint_loads'
+group = 'kinematics'
 
 # %% [markdown]
 # ### Loading the data
@@ -88,9 +88,12 @@ reg_prof.summarize(group)
 
 
 # %%
+# learner = AdaBoostRegressor(n_estimators=100)
 learner = LinearRegression()
+
 lrn_name = type(learner).__name__
-top_fig_dir = Path.cwd().parent / 'models' / 'predictions' / group / lrn_name
+top_fig_dir = Path.cwd().parent / 'models' / 'predictions'
+save_dir = top_fig_dir / group / lrn_name
 n_rows, n_cols = 4, 3
 tim = tkr_train.response['time'][0]
 scaler = StandardScaler()
@@ -98,7 +101,7 @@ regr = artifact.Regressor(tkr_train, tkr_test, learner, scaler=scaler)
 # for resp_name in tkr_train.response_names:
 #     if resp_name == 'time':
 #         continue
-#     artifact.create_plots(n_rows, n_cols, regr, resp_name, top_fig_dir)
+#     artifact.create_plots(n_rows, n_cols, regr, resp_name, save_dir)
 
 
 # %%

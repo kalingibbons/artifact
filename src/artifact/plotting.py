@@ -144,11 +144,11 @@ class ImageViewer:
 
     def __init__(self, top_dir) -> None:
         top_dir = Path(top_dir)
-        self.dir_list = list(top_dir.iterdir())
-        self.dir_names = [x.name for x in self.dir_list]
-        self.im_list = list(self.dir_list[0].glob('*.png'))
-        with open(self.im_list[0], 'rb') as file:
-            self.image = file.read()
+
+        self.group_dir_list = [x for x in top_dir.iterdir()
+                               if x.is_dir()]
+        self.current_group_dir = self.group_dir_list[0]
+        self.group_dir_names = [x.name for x in self.group_dir_list]
 
         self.layout = Layout(
             display='flex',
@@ -159,7 +159,6 @@ class ImageViewer:
         )
 
         self.viewer = widgets.Image(
-            value=self.image,
             format='png',
         )
 
@@ -171,17 +170,26 @@ class ImageViewer:
             icon='arrow-left'
         )
 
-        self.output_dropdown = widgets.Dropdown(
-            options=list(zip(self.dir_names, self.dir_list)),
-            value=self.dir_list[0],
-            description='Output: ',
+        self.group_dropdown = widgets.Dropdown(
+            options=list(zip(self.group_dir_names, self.group_dir_list)),
+            value=self.group_dir_list[0],
+            description='Group:',
+            disabled=False
+        )
+
+        self.learner_dropdown = widgets.Dropdown(
+            description='Regressor:',
+            disabled=False
+        )
+
+        self.response_dropdown = widgets.Dropdown(
+            description='Response:',
             disabled=False
         )
 
         self.scrubber = widgets.IntSlider(
             value=0,
             min=0,
-            max=len(self.im_list) - 1,
             step=1,
             description='',
             disabled=False,
@@ -200,7 +208,15 @@ class ImageViewer:
             icon='arrow-right',
         )
 
-        self.control_box = widgets.Box(
+        self.selection_ctrl_box = widgets.Box(
+            children=(
+                self.group_dropdown,
+                self.learner_dropdown,
+                self.response_dropdown),
+            layout=self.layout
+        )
+
+        self.scrub_ctrl_box = widgets.Box(
             children=(self.prv_button, self.scrubber, self.nxt_button),
             layout=self.layout
         )
@@ -208,16 +224,76 @@ class ImageViewer:
         self.prv_button.on_click(self.on_prv_button_clicked)
         self.nxt_button.on_click(self.on_nxt_button_clicked)
         self.scrubber.observe(self.on_scrubber_change, names='value')
-        self.output_dropdown.observe(self.on_dropdown_change, names='value')
-        children = [self.viewer, self.output_dropdown, self.control_box]
-        self.gui = widgets.VBox(children)
 
+        self.group_dropdown.observe(
+            self.on_group_dropdown_change,
+            names='value'
+        )
+        self.learner_dropdown.observe(
+            self.on_regr_dropdown_change,
+            names='value'
+        )
+        self.response_dropdown.observe(
+            self.on_resp_dropdown_change,
+            names='value'
+        )
+        children = [self.viewer, self.selection_ctrl_box, self.scrub_ctrl_box]
+        self.gui = widgets.VBox(children)
+        self.update_regressor_dir_list()
+        self.scrubber.max = len(self.im_list) - 1
+
+    # List cascade
     def render_img(self):
         im_path = self.im_list[self.scrubber.value]
         with open(str(im_path), 'rb') as file:
-            image = file.read()
-        self.viewer.value = image
+            self.image = file.read()
+        self.viewer.value = self.image
 
+    def update_img_list(self):
+        self.im_list = list(self.current_resp_dir.glob('*.png'))
+        self.render_img()
+
+    def update_resp_dir_list(self):
+        self.resp_dir_list = [x for x in self.current_learner_dir.iterdir()
+                              if x.is_dir()]
+        self.resp_dir_names = [x.name for x in self.resp_dir_list]
+        # try:
+        #     self.idx = self.resp_dir_names.index(self.current_resp_dir.name)
+        # except AttributeError:
+        #     self.idx = 0
+        self.current_resp_dir = self.resp_dir_list[0]
+        # self.current_resp_dir = self.resp_dir_list[self.idx]
+        self.response_dropdown.options = list(
+            zip(self.resp_dir_names, self.resp_dir_list)
+        )
+        self.response_dropdown.value = self.current_resp_dir
+        self.update_img_list()
+
+    def update_regressor_dir_list(self):
+        self.learner_dir_list = [x for x in self.current_group_dir.iterdir()
+                                 if x.is_dir()]
+        self.learner_dir_names = [x.name for x in self.learner_dir_list]
+        self.current_learner_dir = self.learner_dir_list[0]
+        self.learner_dropdown.options = list(
+            zip(self.learner_dir_names, self.learner_dir_list)
+        )
+        self.learner_dropdown.value = self.current_learner_dir
+        self.update_resp_dir_list()
+
+    # Dropdown cascade
+    def on_resp_dropdown_change(self, change):
+        self.current_resp_dir = change['new']
+        self.update_img_list()
+
+    def on_regr_dropdown_change(self, change):
+        self.current_learner_dir = change['new']
+        self.update_resp_dir_list()
+
+    def on_group_dropdown_change(self, change):
+        self.current_group_dir = change['new']
+        self.update_regressor_dir_list()
+
+    # Scrubber tools
     def on_nxt_button_clicked(self, b):
         self.scrubber.value += 1
 
@@ -225,10 +301,6 @@ class ImageViewer:
         self.scrubber.value -= 1
 
     def on_scrubber_change(self, change):
-        self.render_img()
-
-    def on_dropdown_change(self, change):
-        self.im_list = list(change['new'].glob('*.png'))
         self.render_img()
 
     def show(self):
