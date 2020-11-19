@@ -1,9 +1,13 @@
 # %%
 import pickle
+from pathlib import Path
 from colorama import Fore, Style
 from IPython.display import display
 
 # %%
+REGRESSION_PROFILE_PATH = (
+    Path.cwd().parent / 'models' / 'selection' / 'learner_profiles.pkl'
+)
 
 
 class RegressionProfile:

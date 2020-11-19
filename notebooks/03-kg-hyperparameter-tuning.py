@@ -5,6 +5,7 @@ import math
 import logging
 from pathlib import Path
 
+from IPython.display import display
 import numpy as np
 import scipy as sp
 import scipy.io as spio
@@ -36,7 +37,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 import artifact
-from artifact.datasets import load_tkr
+from artifact.datasets import load_tkr, tkr_group_lut
+from artifact.helpers import RegressionProfile, REGRESSION_PROFILE_PATH
 
 
 # %%
@@ -56,12 +58,49 @@ pd.set_option("display.max_columns", 120)
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
 # %% [markdown]
-# **PLEASE** save this file right now using the following naming convention:
-# `NUMBER_FOR_SORTING-YOUR_INITIALS-SHORT_DESCRIPTION`, e.g.
-# `1.0-fw-initial-data-exploration`. Use the number to order the file within
-# the directory according to its usage.
+
+# Next, we'll select a functional group to examine, and only load the necessary
+# data.
+
+# ### Functional group selection
 
 # %%
+func_groups = list(tkr_group_lut.keys())
+func_groups
+
+# %%
+group = 'joint_loads'
+
+# %% [markdown]
+# ### Loading the data
+#
+# We'll load a subset of the data containing the responses making up the chosen
+# functional group.
+
+# %%
+shared_kwargs = dict(load_fcn=load_tkr, functional_group=group)
+tkr_train = artifact.Results(**shared_kwargs, subset='train')
+tkr_test = artifact.Results(**shared_kwargs, subset='test')
+display(tkr_train.response_names[1:])
+
+reg_prof = RegressionProfile(load_path=REGRESSION_PROFILE_PATH)
+reg_prof.summarize(group)
 
 
+# %%
+learner = LinearRegression()
+lrn_name = type(learner).__name__
+top_fig_dir = Path.cwd().parent / 'models' / 'predictions' / group / lrn_name
+n_rows, n_cols = 4, 3
+tim = tkr_train.response['time'][0]
+scaler = StandardScaler()
+regr = artifact.Regressor(tkr_train, tkr_test, learner, scaler=scaler)
+# for resp_name in tkr_train.response_names:
+#     if resp_name == 'time':
+#         continue
+#     artifact.create_plots(n_rows, n_cols, regr, resp_name, top_fig_dir)
 
+
+# %%
+view = artifact.plotting.ImageViewer(top_fig_dir)
+view.show()

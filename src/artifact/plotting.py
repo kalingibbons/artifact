@@ -52,7 +52,7 @@ def create_plots(n_rows,
                  resp_name,
                  fig_dir,
                  force_clobber=False):
-    fig_dir.mkdir(exist_ok=True)
+    fig_dir.mkdir(parents=True, exist_ok=True)
     resp_str = resp_name.replace('_', '-')
     save_dir = fig_dir / resp_str
     save_dir.mkdir(exist_ok=True)

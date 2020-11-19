@@ -42,7 +42,7 @@ import pandas as pd
 
 import artifact
 from artifact.datasets import load_tkr, tkr_group_lut
-from artifact.helpers import RegressionProfile
+from artifact.helpers import RegressionProfile, REGRESSION_PROFILE_PATH
 
 
 # %%
@@ -106,10 +106,7 @@ tkr_train = artifact.Results(**shared_kwargs, subset='train')
 tkr_test = artifact.Results(**shared_kwargs, subset='test')
 display(tkr_train.response_names[1:])
 
-regr_profile_path = (
-    Path.cwd().parent / 'models' / 'selection' / 'learner_profiles.pkl'
-)
-reg_prof = RegressionProfile(load_path=regr_profile_path)
+reg_prof = RegressionProfile(load_path=REGRESSION_PROFILE_PATH)
 
 # %% [markdown]
 # ### Fitting and profiling
@@ -147,7 +144,7 @@ if (force_search) or (group not in saved_keys):
     resp_pbar.close()
 
     reg_prof.add_results(group, err_df)
-    reg_prof.save(regr_profile_path)
+    reg_prof.save(REGRESSION_PROFILE_PATH)
 
 # %% [markdown]
 # ## Results
