@@ -149,6 +149,7 @@ class ImageViewer:
                                if x.is_dir()]
         self.current_group_dir = self.group_dir_list[0]
         self.group_dir_names = [x.name for x in self.group_dir_list]
+        self.resp_idx = 0
 
         self.layout = Layout(
             display='flex',
@@ -184,7 +185,7 @@ class ImageViewer:
 
         self.response_dropdown = widgets.Dropdown(
             description='Response:',
-            disabled=False
+            disabled=False,
         )
 
         self.scrubber = widgets.IntSlider(
@@ -257,15 +258,11 @@ class ImageViewer:
         self.resp_dir_list = [x for x in self.current_learner_dir.iterdir()
                               if x.is_dir()]
         self.resp_dir_names = [x.name for x in self.resp_dir_list]
-        # try:
-        #     self.idx = self.resp_dir_names.index(self.current_resp_dir.name)
-        # except AttributeError:
-        #     self.idx = 0
-        self.current_resp_dir = self.resp_dir_list[0]
-        # self.current_resp_dir = self.resp_dir_list[self.idx]
-        self.response_dropdown.options = list(
-            zip(self.resp_dir_names, self.resp_dir_list)
-        )
+        self.current_resp_dir = self.resp_dir_list[self.resp_idx]
+        new_opts = list(zip(self.resp_dir_names, self.resp_dir_list))
+        self.response_dropdown.unobserve(self.on_resp_dropdown_change, 'value')
+        self.response_dropdown.options = new_opts
+        self.response_dropdown.observe(self.on_resp_dropdown_change, 'value')
         self.response_dropdown.value = self.current_resp_dir
         self.update_img_list()
 
@@ -283,6 +280,7 @@ class ImageViewer:
     # Dropdown cascade
     def on_resp_dropdown_change(self, change):
         self.current_resp_dir = change['new']
+        self.resp_idx = self.resp_dir_names.index(self.current_resp_dir.name)
         self.update_img_list()
 
     def on_regr_dropdown_change(self, change):
@@ -290,6 +288,7 @@ class ImageViewer:
         self.update_resp_dir_list()
 
     def on_group_dropdown_change(self, change):
+        self.resp_idx = 0
         self.current_group_dir = change['new']
         self.update_regressor_dir_list()
 
