@@ -1,11 +1,39 @@
 # artifact
 
-Add a short description here!
+A computing artifact based on predictive modeling of the [implanted knee
+performing a deep-knee-bend](https://scholarworks.boisestate.edu/td/1589/).
 
 
 ## Description
 
-A longer description of your project goes here...
+ Outcomes of total knee arthroplasty (TKA) are dependent on surgical
+ technique, patient variability, and implant design. Poor surgical or design
+ choices can lead to undesirable contact mechanics and joint kinematics,
+ including poor joint alignment, instability, and reduced range of motion. Of
+ these three factors, implant design and surgical alignment are within our
+ control, and there is a need for robust implant designs that can accommodate
+ variability within the patient population. One of the tools used to evaluate
+ implant designs is simulation through finite element analysis (FEA), which
+ offers considerable early design-stage speedups when compared to traditional
+ prototyping and mechanical testing. Nevertheless, the usage of FEA predicates
+ a considerable amount of software and engineering knowledge, and it can take
+ a great deal of time, compute or otherwise, to generate and analyze results.
+ Currently used hardware and software combinations can take anywhere from 4 to
+ 24 hours to run a single simulation of one daily-living task, for a
+ moderately complex knee model. A possible solution to this problem is to use
+ the FEA results to train predictive machine learning regression models
+ capable of quickly  iterating over a number of potential designs. Such models
+ could be used to hone in on a subset of potential designs worthy of further
+ investigation.
+
+ The comprehensive exam committee can skip to [Project
+ Organization](#project-organization). To include some static renders of
+ `jupyter` widgets, the summary artifact is hosted in
+ webpage form at
+ [kalingibbons.com/artifact/00-kg-main-artifact.html](https://kalingibbons.com/artifact/00-kg-main-artifact.html).
+ Within that notebook, you will find additional links to other notebooks which
+ include more of the code used to generate the containing section. The
+ low-level logic for this repository is located in `~/src/artifact/`.
 
 ## Installation
 
