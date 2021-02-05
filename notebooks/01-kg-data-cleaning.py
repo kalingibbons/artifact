@@ -167,6 +167,11 @@ def remove_failed(response_series, df_list):
 
 # %% [markdown]
 # ### Locating the data
+#
+# The `MATLAB` MAT files are stored in the `data/interim` folder because the
+# raw data was stored in plaintext CSV files after being extracted from the FEA
+# simulations. Once cleaned, we'll store the cleaned data in
+# `data/preprocessed`.
 
 # %%
 # Source paths
@@ -181,6 +186,11 @@ cleaned_train_path = cleaned_dir / 'train.parquet'
 
 # %% [markdown]
 # ### Data import and cleaning
+#
+# Reading the MAT file tables into memory, and outputting part of the
+# dataframes to take a look at the data, then dropping the extraneous columns
+# and taking a look at the results. We'll only look at the results from the
+# testing set, but run identical operations on the training set, as well.
 
 # %%
 # Test
@@ -209,6 +219,8 @@ clean_train = remove_failed(dirty_train.iloc[:, -1], [dirty_train])
 
 # %% [markdown]
 # ## Save the cleaned data
+
+# Everything lookedgreat, so we can save the cleaned data.
 
 # %%
 clean_test.to_parquet(cleaned_test_path)

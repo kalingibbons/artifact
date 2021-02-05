@@ -1,4 +1,5 @@
 from pathlib import Path
+import warnings
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -9,7 +10,8 @@ from IPython.display import display
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, make_scorer
+from sklearn.model_selection import cross_val_score
 from sklearn.decomposition import PCA
 from sklearn.multioutput import MultiOutputRegressor
 
@@ -35,11 +37,13 @@ def select_by_regex(data_df, regex_list, axis=0, negate=False):
         labels = data_df.index
     elif axis == 1:
         labels = data_df.columns
-    has_match = np.any([labels.str.contains(x) for x in regex_list], axis=0)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        is_match = np.any([labels.str.contains(x) for x in regex_list], axis=0)
     if negate:
-        has_match = ~has_match
+        is_match = ~is_match
 
-    selected_labels = labels[~has_match]
+    selected_labels = labels[~is_match]
     return data_df.drop(selected_labels, axis=axis), selected_labels
 
 
@@ -155,7 +159,31 @@ class Regressor:
         self.test_predictions = self.learner.predict(self.x_test)
         err = mean_squared_error(
             self.test_values,
-            self.test_predictions
+            self.test_predictions,
+            squared=False
         )
         self.prediction_error = err
         return self.test_predictions
+
+    def cross_val_score(self, response_names=None, n_jobs=1, cv=3):
+        if response_names is None:
+            response_names = self.train_results.response_names
+            if 'time' in response_names:
+                response_names.pop(response_names.index('time'))
+
+        elif isinstance(response_names, str):
+            response_names = [response_names]
+
+        rmse_ratio = np.full((len(response_names), cv), np.nan)
+        for resp_idx, response in enumerate(response_names):
+            y_train = self.train_results.collect_response(response)
+            rmse = cross_val_score(
+                self.learner,
+                self.x_train,
+                y_train,
+                n_jobs=n_jobs,
+                scoring=make_scorer(mean_squared_error, squared=False),
+                cv=cv
+            )
+            rmse_ratio[resp_idx, :] = rmse / (y_train.max() - y_train.min())
+        return rmse_ratio

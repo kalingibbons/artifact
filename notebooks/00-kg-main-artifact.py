@@ -18,15 +18,15 @@
 # these three factors, implant design and surgical alignment are within our
 # control, and there is a need for robust implant designs that can accommodate
 # variability within the patient population. One of the tools used to evaluate
-# implant designs is simulation through finite element analysis (FEM), which
+# implant designs is simulation through finite element analysis (FEA), which
 # offers considerable early design-stage speedups when compared to traditional
-# prototyping and mechanical testing. Nevertheless, the usage of FEM predicates
+# prototyping and mechanical testing. Nevertheless, the usage of FEA predicates
 # a considerable amount of software and engineering knowledge, and it can take
-# a great deal of time, compute or otherwise, to generate and analyse results.
+# a great deal of time, compute or otherwise, to generate and analyze results.
 # Currently used hardware and software combinations can take anywhere from 4 to
 # 24 hours to run a single simulation of one daily-living task, for a
 # moderately complex knee model. A possible solution to this problem is to use
-# the FEM results to train predictive machine learning regression models
+# the FEA results to train predictive machine learning regression models
 # capable of quickly  iterating over a number of potential designs. Such models
 # could be used to hone in on a subset of potential designs worthy of further
 # investigation.
@@ -93,16 +93,16 @@ final_run = False
 # Load and describe the training data
 tkr_train = artifact.Results(load_fcn=load_tkr,
                              subset='train')
-# tkr_train.describe_features()
-# plt.show()
+tkr_train.describe_features()
+plt.show()
 
 
 # %%
 # Load and describe the test space
 tkr_test = artifact.Results(load_fcn=load_tkr,
                             subset='test')
-# tkr_test.describe_features()
-# plt.show()
+tkr_test.describe_features()
+plt.show()
 
 
 # %% [markdown]
@@ -129,8 +129,8 @@ tkr_test = artifact.Results(load_fcn=load_tkr,
 
 
 # %%
-# tkr_train.plot_feature_importances()
-# plt.show()
+tkr_train.plot_feature_importances()
+plt.show()
 
 
 # %% [markdown]
@@ -149,13 +149,13 @@ tkr_test = artifact.Results(load_fcn=load_tkr,
 
 
 # %%
-# tkr_train.plot_feature_pca()
-# plt.show()
+tkr_train.plot_feature_pca()
+plt.show()
 
 
 # %%
-# tkr_train.plot_feature_importances(use_pareto=True)
-# plt.show()
+tkr_train.plot_feature_importances(use_pareto=True)
+plt.show()
 
 
 # %% [markdown]
@@ -187,24 +187,29 @@ learners = (
     DecisionTreeRegressor(),
     LinearRegression()
 )
-names = [x.__str__().replace('()', '') for x in learners]
+learner_names = [x.__str__().replace('()', '') for x in learners]
 scaler = StandardScaler()
 regr = artifact.Regressor(tkr_train, tkr_test, learners[0], scaler=scaler)
-err_df = pd.DataFrame(index=names)
-# for name in regr.train_results.response_names:
-#     if name == 'time':
-#         continue
-#     errs = np.zeros_like(names, dtype=np.float)
-#     for idx, lrn in enumerate(learners):
-#         regr.learner = MultiOutputRegressor(lrn)
-#         y_pred = regr.fit(name).predict()
-#         errs[idx] = regr.prediction_error
-#     err_df[name] = errs
+err_df = pd.DataFrame(index=learner_names)
+resp_pbar = tqdm(regr.train_results.response_names, desc='Processing...')
+for resp in resp_pbar:
+    if resp == 'time':
+        continue
+    resp_pbar.set_description(f'Processing {resp}')
+    errs = np.zeros_like(learner_names, dtype=np.float)
+    lrn_pbar = tqdm(learners, desc='Fitting...', leave=False)
+    for idx, lrn in enumerate(lrn_pbar):
+        desc = f'{learner_names[idx].replace("base_estimator=", "")}'
+        lrn_pbar.set_description(desc)
+        regr.learner = MultiOutputRegressor(lrn)
+        y_pred = regr.fit(resp).predict()
+        errs[idx] = regr.prediction_error
+    err_df[resp] = errs
 
-# best_learners = err_df.idxmin()
+best_learners = err_df.idxmin()
 
-# print('Best learner counts:')
-# display(best_learners.value_counts(), best_learners.sort_values())
+print('Best learner counts:')
+display(best_learners.value_counts(), best_learners.sort_values())
 
 
 # %% [markdown]
@@ -215,14 +220,14 @@ err_df = pd.DataFrame(index=names)
 
 # %%
 
-# regr.learner = MultiOutputRegressor(LinearRegression())
+regr.learner = MultiOutputRegressor(LinearRegression())
 top_fig_dir = Path.cwd().parent / 'models' / 'predictions'
-# n_rows, n_cols = 4, 3
-# tim = tkr_train.response['time'][0]
-# for resp_name in tkr_train.response_names:
-#     if resp_name == 'time':
-#         continue
-#     artifact.create_plots(n_rows, n_cols, regr, resp_name, top_fig_dir)
+n_rows, n_cols = 4, 3
+tim = tkr_train.response['time'][0]
+for resp_name in tkr_train.response_names:
+    if resp_name == 'time':
+        continue
+    artifact.create_plots(n_rows, n_cols, regr, resp_name, top_fig_dir)
 
 
 # %%

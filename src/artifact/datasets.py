@@ -1,8 +1,10 @@
-import re
 from pathlib import Path
+import warnings
 import numpy as np
 import pandas as pd
 from artifact.core_api import select_by_regex
+
+# warnings.filterwarnings('ignore', category=UserWarning, module=pd)
 
 
 tkr_group_lut = dict(
@@ -39,7 +41,7 @@ def load_tkr(functional_group=None, subset=None):
             patterns.append(tkr_group_lut[functional_group])
             patterns.append('time')
             df, _ = select_by_regex(df, patterns, axis=1)
-            return df
+        return df
 
     if (subset is None) or (subset.lower() == 'test'):
         test_data = pd.read_parquet(data_dir / 'test.parquet')

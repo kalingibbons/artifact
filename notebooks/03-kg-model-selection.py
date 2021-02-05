@@ -101,50 +101,50 @@ group = 'patella'
 # persistent results.
 
 # %%
-shared_kwargs = dict(load_fcn=load_tkr, functional_group=group)
-tkr_train = artifact.Results(**shared_kwargs, subset='train')
-tkr_test = artifact.Results(**shared_kwargs, subset='test')
-display(tkr_train.response_names[1:])
+for group in func_groups:
+    shared_kwargs = dict(load_fcn=load_tkr, functional_group=group)
+    tkr_train = artifact.Results(**shared_kwargs, subset='train')
+    tkr_test = artifact.Results(**shared_kwargs, subset='test')
+    display(tkr_train.response_names[1:])
 
-reg_prof = RegressionProfile(load_path=REGRESSION_PROFILE_PATH)
+    reg_prof = RegressionProfile(load_path=REGRESSION_PROFILE_PATH)
 
-# %% [markdown]
-# ### Fitting and profiling
+    # %% [markdown]
+    # ### Fitting and profiling
 
-# If the profiling results from the selected functional group have been loaded,
-# then the `force_search` flag will need to be set to `True` to overwrite the
-# previous profiling session.
+    # If the profiling results from the selected functional group have been loaded,
+    # then the `force_search` flag will need to be set to `True` to overwrite the
+    # previous profiling session.
+    # %%
+    force_search = False
 
-# %%
-force_search = False
+    # %%
+    learner_names = [x.__str__().replace('()', '') for x in learners]
+    scaler = StandardScaler()
+    regr = artifact.Regressor(tkr_train, tkr_test, learners[0], scaler=scaler)
+    err_df = pd.DataFrame(index=learner_names)
 
-# %%
-learner_names = [x.__str__().replace('()', '') for x in learners]
-scaler = StandardScaler()
-regr = artifact.Regressor(tkr_train, tkr_test, learners[0], scaler=scaler)
-err_df = pd.DataFrame(index=learner_names)
+    saved_keys = reg_prof.error_dataframes.keys()
+    if (force_search) or (group not in saved_keys):
+        resp_pbar = tqdm(regr.train_results.response_names, desc='Processing...')
+        for resp in resp_pbar:
+            if resp == 'time':
+                continue
+            resp_pbar.set_description(f'Processing {resp}')
+            errs = np.zeros_like(learner_names, dtype=np.float)
+            lrn_pbar = tqdm(learners, desc='Fitting...', leave=False)
+            for idx, lrn in enumerate(lrn_pbar):
+                desc = f'{learner_names[idx].replace("base_estimator=", "")}'
+                lrn_pbar.set_description(desc)
+                regr.learner = MultiOutputRegressor(lrn)
+                y_pred = regr.fit(resp).predict()
+                errs[idx] = regr.prediction_error
+            err_df[resp] = errs
+            lrn_pbar.close()
+        resp_pbar.close()
 
-saved_keys = reg_prof.error_dataframes.keys()
-if (force_search) or (group not in saved_keys):
-    resp_pbar = tqdm(regr.train_results.response_names, desc='Processing...')
-    for resp in resp_pbar:
-        if resp == 'time':
-            continue
-        resp_pbar.set_description(f'Processing {resp}')
-        errs = np.zeros_like(learner_names, dtype=np.float)
-        lrn_pbar = tqdm(learners, desc='Fitting...', leave=False)
-        for idx, lrn in enumerate(lrn_pbar):
-            desc = f'{learner_names[idx].replace("base_estimator=", "")}'
-            lrn_pbar.set_description(desc)
-            regr.learner = MultiOutputRegressor(lrn)
-            y_pred = regr.fit(resp).predict()
-            errs[idx] = regr.prediction_error
-        err_df[resp] = errs
-        lrn_pbar.close()
-    resp_pbar.close()
-
-    reg_prof.add_results(group, err_df)
-    reg_prof.save(REGRESSION_PROFILE_PATH)
+        reg_prof.add_results(group, err_df)
+        reg_prof.save(REGRESSION_PROFILE_PATH)
 
 # %% [markdown]
 # ## Results
@@ -153,3 +153,5 @@ if (force_search) or (group not in saved_keys):
 # reg_prof.summarize(group)
 for key in reg_prof.error_dataframes.keys():
     reg_prof.summarize(key)
+
+# %%

@@ -136,6 +136,7 @@ def pareto(heights, cmap=None, names=None):
     yticks = ax2.get_yticks()
     yticks = np.round(yticks / ysum * 100).astype(np.int)
     labels = [str(yt) + '%' for yt in yticks]
+    ax2.set_yticks(ax2.get_yticks().tolist())  # Workaround for avoiding warn
     ax2.set_yticklabels(labels)
     return (bar, lin), (ax, ax2)
 

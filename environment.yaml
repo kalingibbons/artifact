@@ -3,6 +3,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - mamba
   - python=3.8
   - pip
   - dvc
@@ -16,18 +17,21 @@ dependencies:
   - altair
   - tqdm
   - click
+  - plotly
   - optuna
   - xlrd
   - scikit-learn
   - statsmodels
   - ipywidgets
   - pip:
+    - jupyter-book
     - pyscaffoldext-dsproject
   # for development only (could also be kept in a separate environment file)
   - pyscaffold
   - pycodestyle
   - pydocstyle
   - jupyterlab
+  - nodejs
   - pytest
   - pytest-cov
   - tox

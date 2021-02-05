@@ -3,34 +3,34 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - tox
-  - statsmodels
-  - pre_commit
-  - dask
-  - pydocstyle
-  - seaborn
-  - click
-  - pytest
-  - sympy
-  - pip
-  - nbstripout
-  - numpy
-  - sphinx
-  - altair
-  - pyscaffold
   - pycodestyle
-  - pandas
+  - dvc
+  - python=3.8
   - tqdm
-  - optuna
-  - ipykernel
-  - jupyter
+  - statsmodels
   - xlrd
-  - scipy
-  - matplotlib
-  - nbdime
-  - scikit-learn
-  - recommonmark
+  - dask
+  - tox
+  - pydocstyle
+  - pandas
   - jupyterlab
-  - python==3.8
+  - optuna
+  - pip
+  - sympy
+  - scipy
+  - pre_commit
+  - recommonmark
+  - click
+  - pyscaffold
+  - numpy
+  - nbstripout
+  - pytest
+  - sphinx
+  - nbdime
   - pytest-cov
-prefix: C:\Users\kalingibbons\miniconda3\envs\artifact
+  - matplotlib
+  - seaborn
+  - scikit-learn
+  - altair
+  - ipywidgets
+prefix: C:\Users\kalin\Miniconda3\envs\artifact

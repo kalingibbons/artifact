@@ -1,3 +1,7 @@
+# Remove afte Presentation
+references/*
+reports/synthesis/*
+
 # Temporary and binary files
 *~
 *.py[cod]
