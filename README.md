@@ -26,14 +26,16 @@ performing a deep-knee-bend](https://scholarworks.boisestate.edu/td/1589/).
  could be used to hone in on a subset of potential designs worthy of further
  investigation.
 
- The comprehensive exam committee can skip to [Project
- Organization](#project-organization). To include some static renders of
+ To include some static renders of
  `jupyter` widgets, the summary artifact is hosted in
  webpage form at
  [kalingibbons.com/artifact/00-kg-main-artifact.html](https://kalingibbons.com/artifact/00-kg-main-artifact.html).
  Within that notebook, you will find additional links to other notebooks which
  include more of the code used to generate the containing section. The
  low-level logic for this repository is located in `~/src/artifact/`.
+
+ The **comprehensive exam committee** can skip to [Project
+ Organization](#project-organization).
 
 ## Installation
 
