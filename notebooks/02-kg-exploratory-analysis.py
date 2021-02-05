@@ -28,7 +28,6 @@ from artifact.datasets import load_tkr
 
 
 # %%
-
 sns.set_context("poster")
 sns.set(rc={'figure.figsize': (16, 9.)})
 sns.set_style("whitegrid")
