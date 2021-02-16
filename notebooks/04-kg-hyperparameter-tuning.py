@@ -1,3 +1,45 @@
+# %% [markdown]
+# # Comprehensive Exam
+#
+# ## Coding Artifact
+#
+# Kalin Gibbons
+#
+# Nov 20, 2020
+
+#
+# > Note: A hyperparameter is a numerical or other measurable factor
+# responsible for some aspect of training a machine learning model, whose value
+# cannot be estimated from the data, unlike regular parameters which represent
+# inherent properties of the natural processes which generated data.
+#
+
+# ## Hyperparameter Optimization
+#
+# There are several python packages with automatic hyperparameter selection
+# algorithms. A relatively recent contribution which I find particularly easy
+# to use is [optuna](https://optuna.org/), which is detailed in this
+# [2019 paper](https://arxiv.org/abs/1907.10902). Optuna allows the user to
+# suggest ranges of values for parameters of various types, then utilizes a
+# parameter sampling algorithms to find an optimal set of hyperparameters. Some
+# of the sampling schemes available are:
+#
+# * Grid Search
+# * Random
+# * Bayesian
+# * Evolutionary
+#
+# While the parameter suggestion schemes available are:
+#
+# * Integers
+#   * Linear step
+#   * Logarithmic step
+# * Floats
+#   * Logarithmic
+#   * Uniform
+# * Categorical
+#   * List
+
 # %%
 import os
 import sys
@@ -5,7 +47,7 @@ import math
 import logging
 from pathlib import Path
 
-from IPython.display import display
+from IPython.display import display, clear_output
 from colorama import Fore, Style
 import numpy as np
 import scipy as sp
@@ -202,18 +244,6 @@ def objective(trial, train, test, regressors):
 
 
 # %%
-# regressor = artifact.Regressor(tkr_train,
-#                                tkr_test,
-#                                Ridge(alpha=2),
-#                                scaler=StandardScaler())
-# a = regressor.cross_val_score(n_jobs=1, cv=7)
-# b = regressor.cross_val_score(n_jobs=1, cv=5)
-# display(a)
-# display(a.mean())
-# display(b)
-# display(b.mean())
-
-# %%
 study = optuna.create_study(direction='minimize')
 study.optimize(
     lambda t: objective(t, tkr_train, tkr_test, learners),
@@ -252,6 +282,7 @@ for resp_name in tkr_train.response_names:
     if resp_name == 'time':
         continue
     artifact.create_plots(n_rows, n_cols, regr, resp_name, save_dir)
+    clear_output(wait=True)
 
 
 # %%

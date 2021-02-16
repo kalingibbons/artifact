@@ -1,3 +1,15 @@
+# %% [markdown]
+#
+# # Comprehensive Exam
+#
+# ## Coding Artifact
+#
+# Kalin Gibbons
+#
+# Nov 20, 2020
+
+# ## Exploratory Analysis
+
 # %%
 import os
 import sys

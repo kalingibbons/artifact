@@ -51,7 +51,7 @@ import math
 import logging
 from pathlib import Path
 
-from IPython.display import display
+from IPython.display import display, clear_output
 
 import numpy as np
 import scipy as sp
@@ -86,7 +86,7 @@ from sklearn.tree import DecisionTreeRegressor
 from tqdm.auto import tqdm
 
 import artifact
-from artifact.datasets import load_tkr
+from artifact.datasets import load_tkr, tkr_group_lut
 
 
 # %%
@@ -107,8 +107,10 @@ logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
 
 # %% [markdown]
+# # 
 #
-# ## Data Cleaning
+# ## Data [Cleaning](./01-kg-data-cleaning.ipynb) and [Exploratory
+# Analysis](./02-kg-exploratory-analysis.ipynb)
 #
 # ---
 #
@@ -158,6 +160,7 @@ plt.show()
 
 
 # %%
+sns.set_theme('poster', 'whitegrid', font='Times New Roman')
 tkr_train.plot_feature_importances()
 plt.show()
 
@@ -196,7 +199,7 @@ plt.show()
 # We'll leave them in because I want to make a comparison to some earlier
 # results from looking at this problem in 2017.
 
-# ## Regression
+# ## Regression [Model Selection](./03-kg-model-selection.ipynb)
 #
 # ---
 #
@@ -233,8 +236,11 @@ for resp in resp_pbar:
         regr.learner = MultiOutputRegressor(lrn)
         y_pred = regr.fit(resp).predict()
         errs[idx] = regr.prediction_error
+    lrn_pbar.close()
     err_df[resp] = errs
 
+resp_pbar.close()
+clear_output(wait=True)
 best_learners = err_df.idxmin()
 
 print('Best learner counts:')
@@ -249,14 +255,22 @@ display(best_learners.value_counts(), best_learners.sort_values())
 
 # %%
 
+func_groups = list(tkr_group_lut.keys())
 regr.learner = MultiOutputRegressor(LinearRegression())
-top_fig_dir = Path.cwd().parent / 'models' / 'predictions'
+lrn_name = type(regr.learner).__name__
+top_fig_dir = Path.cwd().parent / 'models' / 'final_plots'
 n_rows, n_cols = 4, 3
 tim = tkr_train.response['time'][0]
-for resp_name in tkr_train.response_names:
-    if resp_name == 'time':
-        continue
-    artifact.create_plots(n_rows, n_cols, regr, resp_name, top_fig_dir)
+for group in func_groups:
+    save_dir = top_fig_dir / group / lrn_name
+    shared_kwargs = dict(load_fcn=load_tkr, functional_group=group)
+    tkr_train = artifact.Results(**shared_kwargs, subset='train')
+    tkr_test = artifact.Results(**shared_kwargs, subset='test')
+    for resp_name in tkr_train.response_names:
+        if resp_name == 'time':
+            continue
+        artifact.create_plots(n_rows, n_cols, regr, resp_name, save_dir)
+    clear_output(wait=True)
 
 
 # %%

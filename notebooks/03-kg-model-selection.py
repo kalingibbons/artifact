@@ -1,5 +1,14 @@
 # %% [markdown]
-# # Model Selection
+#
+# # Comprehensive Exam
+#
+# ## Coding Artifact
+#
+# Kalin Gibbons
+#
+# Nov 20, 2020
+
+# ## Model Selection
 #
 # Base selection of regressors is performed by fitting multiple regressors
 # without performing any parameter tuning, then comparing the resulting errors
