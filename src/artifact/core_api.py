@@ -179,11 +179,23 @@ class Results:
 
 
 class Regressor:
+    """Perform multi output regression on simulation results."""
+
     def __init__(self,
                  train_results,
                  test_results,
                  learner,
                  scaler=None):
+        """Construct Regressor with optional data scaling.
+
+        Args:
+            train_results (DataFrame): Results from the training simulations.
+            test_results (DataFrame): Results from the validation simulations.
+            learner (Regressor): Single output regressor implementing standard
+                scikit-learn API
+            scaler (Scaler, optional): Data scaler object implementing
+                scikit-lear API. Defaults to None.
+        """
         self.train_results = train_results
         self.test_results = test_results
         self.learner = MultiOutputRegressor(learner)
@@ -198,6 +210,15 @@ class Regressor:
             self.x_test = self.scaler.transform(self.x_test)
 
     def fit(self, response_name):
+        """Fit multioutput regressor to training data.
+
+        Args:
+            response_name (str): The response name to be fit.
+
+        Returns:
+            MultiOutputRegressor: The fitted multioutput regressor object for
+                method chaining.
+        """
         y_train = self.train_results.collect_response(response_name)
         self.test_values = self.test_results.collect_response(response_name)
         self.learner.fit(self.x_train, y_train)
@@ -205,6 +226,15 @@ class Regressor:
         return self
 
     def predict(self):
+        """Predict new outputs using the already fitted Regressor.
+
+        Operates on the entire test dataset, and calculates root-mean-square
+        prediction errors for the observations.
+
+        Returns:
+            NdArray: An array of predictions for each observation in the
+                validation dataset.
+        """
         self.test_predictions = self.learner.predict(self.x_test)
         err = mean_squared_error(
             self.test_values,
@@ -215,6 +245,23 @@ class Regressor:
         return self.test_predictions
 
     def cross_val_score(self, response_names=None, n_jobs=1, cv=3):
+        """Score a list of responses using cross validation.
+
+        Calculates the root mean squared errors for the list of response names,
+        then non dimensionalizes the errors by response range (RMSE / range).
+
+        Args:
+            response_names ([list](str), optional): A list of response names to
+                perform cross validation on. Defaults to None.
+            n_jobs (int, optional): The number of jobs to run in parallel.
+                Defaults to 1.
+            cv (int, optional): The number of folds in a stratified K-fold.
+                Defaults to 3.
+
+        Returns:
+            float: An array of nondimensionalized RMSE ratios scoring the
+                cross-validation.
+        """
         if response_names is None:
             response_names = self.train_results.response_names
             if 'time' in response_names:
