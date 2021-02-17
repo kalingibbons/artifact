@@ -122,7 +122,7 @@ logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
 # %%
 # Load and describe the training data
-tkr_train = artifact.Results(load_fcn=load_tkr,
+tkr_train = artifact.Results(results_reader=load_tkr,
                              subset='train')
 tkr_train.describe_features()
 plt.show()
@@ -130,7 +130,7 @@ plt.show()
 
 # %%
 # Load and describe the test space
-tkr_test = artifact.Results(load_fcn=load_tkr,
+tkr_test = artifact.Results(results_reader=load_tkr,
                             subset='test')
 tkr_test.describe_features()
 plt.show()
