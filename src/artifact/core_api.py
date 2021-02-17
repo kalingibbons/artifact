@@ -48,12 +48,22 @@ def select_by_regex(data_df, regex_list, axis=0, negate=False):
 
 
 class Results:
-    def __init__(self, *load_args, load_fcn=None, **load_kwargs):
+    """Load and describe Abaqus simulation results."""
+
+    def __init__(self, *load_args, results_reader=None, **load_kwargs):
+        """Load simulation results using a reader function.
+
+        Args:
+            load_fcn ([function_handle], optional): The reader function used
+                for loading the results data. Should return a tuple of pandas
+                DataFrame objects, separating feature columns from response
+                columns. Defaults to None.
+        """
         self._importances = None
         self._importances_std = None
         self._importances_indices = None
-        if load_fcn is not None:
-            self.features, self.response = load_fcn(*load_args, **load_kwargs)
+        if results_reader is not None:
+            self.features, self.response = results_reader(*load_args, **load_kwargs)
             self.feature_names = list(self.features.columns)
             self.response_names = list(self.response.columns)
         else:
@@ -63,11 +73,19 @@ class Results:
             self.response_names = None
 
     def describe_features(self):
+        """Print summary statistics and histogram for features.
+
+        The summary statistics are output from the DataFrame.describe() method.
+
+        Returns:
+            [list] Axes: Histograms produced by the DataFrame.hist() method.
+        """
         display(self.features.describe())
         axs = self.features.hist(figsize=(12, 11))
         return axs
 
     def _calc_importances(self):
+        """Calculate feature importances using random forest regression."""
         X = StandardScaler().fit_transform(self.features.values)
         feats = self.features.columns
 
@@ -88,6 +106,20 @@ class Results:
             self._importances_indices = np.argsort(imps)[::-1]
 
     def plot_feature_importances(self, use_pareto=False):
+        """Plot feature importances.
+
+        Will calculate importances if they do not already exist. Can be plotted
+        with standard deviation bars, or as a Pareto plot in order to display
+        cumulative importances.
+
+        Args:
+            use_pareto (bool, optional): Set to True to use a pareto plot
+                instead of the standard deviations. Defaults to False.
+
+        Returns:
+            (Figure, Axes): The figure and axes handles for the resulting
+                plots.
+        """
         X = StandardScaler().fit_transform(self.features.values)
         if self._importances is None:
             self._calc_importances()
@@ -117,6 +149,14 @@ class Results:
         return fig, ax
 
     def plot_feature_pca(self):
+        """Pareto plot the principal components of dataset features.
+
+        Principal components are axes of highest variance.
+
+        Returns:
+            (Figure, Axes): The figure and axes handles of the resulting Pareto
+                plot.
+        """
         X = StandardScaler().fit_transform(self.features.to_numpy())
         pca = PCA(n_components=self.features.columns.size)
         pca.fit(X)
@@ -126,6 +166,15 @@ class Results:
         return fig, ax
 
     def collect_response(self, response_name):
+        """Extract single response column as numpy array.
+
+        Args:
+            response_name (str): The response name to be extracted.
+
+        Returns:
+            [NdArray]: A numpy array of response variables, with each entry
+                corresponding to a single observation.
+        """
         return np.vstack(self.response[response_name].ravel())
 
 
