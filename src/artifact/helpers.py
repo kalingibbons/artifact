@@ -28,7 +28,7 @@ class RegressionProfile:
                 pass
 
     def __repr__(self):
-        """String representation of RegressionProfile object.
+        """Represent RegressionProfile object as a string.
 
         Returns:
             str: A list of all the keys within the RegressionProfile.
