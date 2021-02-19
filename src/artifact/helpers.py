@@ -1,3 +1,5 @@
+"""Helper classes and functions."""
+
 # %%
 import pickle
 from pathlib import Path

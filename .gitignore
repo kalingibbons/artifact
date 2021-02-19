@@ -1,3 +1,5 @@
+!*.dvc
+
 # Remove afte Presentation
 references/*
 reports/synthesis/*

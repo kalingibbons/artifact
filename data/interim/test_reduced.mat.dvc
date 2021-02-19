@@ -1,0 +1,3 @@
+outs:
+- md5: d60ede733dde59fe74cb1f5fdc3cd5fd
+  path: test_reduced.mat

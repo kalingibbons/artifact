@@ -1,3 +1,5 @@
+"""Core API for performing predictive statistical analysis of FEA results."""
+
 from pathlib import Path
 import warnings
 
@@ -63,7 +65,9 @@ class Results:
         self._importances_std = None
         self._importances_indices = None
         if results_reader is not None:
-            self.features, self.response = results_reader(*load_args, **load_kwargs)
+            self.features, self.response = results_reader(
+                *load_args, **load_kwargs
+            )
             self.feature_names = list(self.features.columns)
             self.response_names = list(self.response.columns)
         else:

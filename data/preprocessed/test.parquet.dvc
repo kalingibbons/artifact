@@ -1,0 +1,3 @@
+outs:
+- md5: d3337f7498392548de5b7dd21ed925ba
+  path: test.parquet
